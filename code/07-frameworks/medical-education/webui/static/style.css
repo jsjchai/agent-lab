@@ -416,11 +416,11 @@ code, pre { font-family: var(--font-mono); }
 
 .flow {
   display: grid;
-  grid-template-columns: auto 22px auto 22px auto 22px auto 22px auto 22px auto;
+  grid-template-columns: auto 20px auto 20px auto 20px auto 20px auto 20px auto;
   grid-template-rows: auto 30px;
   align-items: start;
   justify-content: center;
-  column-gap: 3px;
+  column-gap: 2px;
   row-gap: 8px;
   min-width: 640px;
 }
@@ -430,8 +430,8 @@ code, pre { font-family: var(--font-mono); }
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  min-width: 78px;
-  padding: 9px 9px 8px;
+  min-width: 74px;
+  padding: 9px 8px 8px;
   border: 1.5px solid var(--border);
   border-radius: 10px;
   background: var(--surface);
@@ -451,11 +451,11 @@ code, pre { font-family: var(--font-mono); }
 
 .node-name {
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 650;
   line-height: 1.4;
   color: #475569;
-  word-break: break-all;
+  white-space: nowrap;
 }
 
 .node-label {
@@ -905,11 +905,83 @@ code, pre { font-family: var(--font-mono); }
   color: var(--text-soft);
   font-size: 12.5px;
   line-height: 1.65;
-  white-space: pre-wrap;
+  white-space: normal;
   word-break: break-word;
   transition: max-height .2s ease;
 }
 .agent-output .empty-hint { font-size: 12px; }
+
+/* 角色卡内是渲染后的 Markdown：压缩标题与表格，保持“摘要”观感 */
+.agent-output h1,
+.agent-output h2,
+.agent-output h3,
+.agent-output h4,
+.agent-output h5,
+.agent-output h6 {
+  margin: 9px 0 3px;
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 700;
+  color: var(--primary-strong);
+}
+.agent-output > :first-child { margin-top: 0; }
+.agent-output p { margin: 3px 0; }
+.agent-output ul,
+.agent-output ol { margin: 3px 0 5px; padding-left: 1.35em; }
+.agent-output li { margin: 1px 0; }
+.agent-output li::marker { color: var(--primary); }
+.agent-output strong { color: var(--text); font-weight: 700; }
+.agent-output code {
+  padding: 0 3px;
+  border-radius: 3px;
+  background: #e8eef3;
+  color: #0f4c47;
+  font-size: .92em;
+}
+.agent-output pre {
+  margin: 5px 0;
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 10.5px;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+.agent-output pre code { padding: 0; background: transparent; color: inherit; font-size: inherit; }
+.agent-output blockquote {
+  margin: 5px 0;
+  padding: 5px 8px;
+  border-left: 2px solid #5eead4;
+  border-radius: 0 5px 5px 0;
+  background: var(--primary-tint);
+  color: #134e4a;
+  font-size: 11.5px;
+}
+.agent-output blockquote p { margin: 1px 0; }
+.agent-output hr { margin: 7px 0; border: 0; border-top: 1px dashed var(--border-strong); }
+.agent-output .table-wrap {
+  margin: 5px 0;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  scrollbar-width: thin;
+}
+.agent-output table { width: 100%; border-collapse: collapse; font-size: 10.5px; line-height: 1.5; }
+.agent-output th,
+.agent-output td {
+  padding: 3px 5px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.agent-output th {
+  background: #eef4f4;
+  color: #134e4a;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.agent-output tbody tr:nth-child(even) { background: var(--surface-3); }
 
 .agent-card.is-clipped:not(.expanded) .agent-output::after {
   content: "";
@@ -1099,6 +1171,7 @@ code, pre { font-family: var(--font-mono); }
 
 @media (max-width: 720px) {
   .container { padding: 0 14px; }
+  .topbar { position: static; }
   .topbar-inner {
     flex-direction: column;
     align-items: flex-start;
@@ -1118,9 +1191,34 @@ code, pre { font-family: var(--font-mono); }
   .btn { width: 100%; }
   .panel-head { flex-direction: column; align-items: flex-start; gap: 3px; padding: 13px 14px 11px; }
   .panel-hint { text-align: left; }
-  .flow-scroll { padding: 14px 14px 6px; }
-  .flow { min-width: 600px; }
-  .flow-foot { padding: 10px 14px 0; }
+  /* 窄屏流程改为纵向，避免横向滚动藏住后面的节点 */
+  .flow-scroll { padding: 14px 14px 4px; overflow: visible; }
+  .flow {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    min-width: 0;
+  }
+  .flow-node {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 8px;
+    min-width: 0;
+    padding: 8px 10px;
+    text-align: left;
+  }
+  .flow-node .node-icon { flex: 0 0 auto; }
+  .flow-node .node-name { min-width: 112px; }
+  .flow-arrow {
+    align-self: flex-start;
+    margin-left: 27px;
+    padding: 1px 0;
+    transform: rotate(90deg);
+  }
+  .flow-loop { display: none; }
+  .flow-foot { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 14px 0; }
+  .flow-note { max-width: none; }
   .review-list { padding: 14px; }
   .folds { padding: 12px 12px 2px; }
   .final-block { padding: 12px 14px 14px; }

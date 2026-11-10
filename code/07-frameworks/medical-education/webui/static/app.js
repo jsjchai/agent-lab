@@ -207,7 +207,8 @@
           quoteLines.push(lines[i].trim().replace(/^>\s?/, ''));
           i += 1;
         }
-        html.push('<blockquote><p>' + renderInline(joinTextLines(quoteLines)) + '</p></blockquote>');
+        /* 引用内的换行保留为 <br>：> 行通常是元信息，拼成一段会粘在一起 */
+        html.push('<blockquote><p>' + quoteLines.map(renderInline).join('<br>') + '</p></blockquote>');
         continue;
       }
 
@@ -621,9 +622,10 @@
 
     var example = state.runExample;
     var seconds = parseFloat(data.elapsed);
-    if (!isFinite(seconds) || seconds <= 0) {
-      /* mock 模式子进程极快，后端 elapsed 可能是 0；退回客户端实测以显示总耗时。 */
-      seconds = (Date.now() - state.startedAt) / 1000;
+    var measured = (Date.now() - state.startedAt) / 1000;
+    if (!isFinite(seconds) || seconds < measured) {
+      /* mock 子进程极快，后端 elapsed 可能为 0；取较大值，避免总耗时显示 0.0s。 */
+      seconds = measured;
     }
     el.timer.textContent = seconds.toFixed(1) + 's';
 
