@@ -1,0 +1,45 @@
+# ---------- 系统 ----------
+.DS_Store
+Thumbs.db
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---------- Node ----------
+node_modules/
+dist/
+.pnpm-store/
+*.tsbuildinfo
+
+# ---------- Jupyter ----------
+.ipynb_checkpoints/
+
+# ---------- 密钥 ----------
+.env
+.env.*
+!.env.example
+
+# ---------- 大文件 ----------
+data/*
+!data/.gitkeep
+docs/papers/**/*.pdf
+*.zip
+*.tar.gz
+*.parquet
+*.sqlite
+*.sqlite3
+*.db
+
+# ---------- 运行产物 ----------
+runs/
+outputs/
+*.log
