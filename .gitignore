@@ -43,3 +43,11 @@ docs/papers/**/*.pdf
 runs/
 outputs/
 *.log
+
+# ---------- uv ----------
+.uv-cache/
+
+# ---------- 示例运行时的临时目录 ----------
+.home/
+.crewai-home/
+.crewai/

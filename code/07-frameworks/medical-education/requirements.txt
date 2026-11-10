@@ -1,0 +1,9 @@
+# 两个示例共用的依赖（实际验证过的版本）
+# 安装：
+#   cd /Users/jsjchai/agent-lab
+#   export UV_CACHE_DIR="$PWD/.uv-cache"
+#   uv pip install --python .venv/bin/python -r code/07-frameworks/medical-education/requirements.txt
+
+langgraph>=1.2,<2.0
+crewai>=1.15,<2.0
+openai>=2.0          # AGENT_LLM=openai 时才真正用到
