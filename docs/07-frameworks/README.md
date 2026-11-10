@@ -13,7 +13,7 @@
 - [医疗教学 Agent 对照实现](../../code/07-frameworks/medical-education/README.md)
   同一个业务（内科住培教学活动设计）用两个框架各写一遍：
   LangGraph 用状态图 + 条件边实现「评审不过就返工」，CrewAI 用 4 个角色 + 4 个任务协作产出教案。
-  两者都带离线 mock 模式，无需 API key 即可跑通并测试。
+  两者都带离线 mock 模式，无需 API key 即可跑通并测试；另含 7B 小模型适配（硬约束、JSON 校验重试）与模型体检脚本。
 
 ## 关键问题
 - 状态怎么存？断点续跑怎么做？

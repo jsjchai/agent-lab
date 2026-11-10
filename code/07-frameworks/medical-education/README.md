@@ -107,6 +107,70 @@ export AGENT_MODEL=gpt-4o-mini          # 或 deepseek-chat / qwen-plus
 切到真实模型后建议观察：`review` 节点的 JSON 是否稳定、分数是否合理、
 `route_after_review` 是否真的会被触发（这是检验"评测是否可信"的起点）。
 
+## 小模型（本地 7B/8B）怎么跑
+
+本机装好 [Ollama](https://ollama.com/) 后，用 OpenAI 兼容接口即可，不用改代码：
+
+```bash
+ollama pull qwen2.5:7b            # 一次性，约 4.7 GB
+
+export AGENT_LLM=openai
+export OPENAI_BASE_URL=http://localhost:11434/v1
+export OPENAI_API_KEY=ollama      # 本地服务不校验，随便填
+
+../../../.venv/bin/python langgraph_case_agent.py --model qwen2.5:7b
+AGENT_MODEL=qwen2.5:7b ../../../.venv/bin/python crewai_teaching_activity.py
+```
+
+### 小模型会在哪儿翻车（实测，M2 Max 32G）
+
+| 配置 | 耗时 | 表现 |
+|---|---|---|
+| mock | 1.5 s | 流程正确，用于测代码 |
+| qwen2.5:7b **未适配** | 64 s | ① 把「90 分钟教学」写成「4 周、70 小时」；② 评审给 85 分、同时列 6 条问题、`verdict=needs_revision`——而路由只看分数，**直接放行** |
+| qwen2.5:7b **适配后** | 5 min | 守住 90 分钟（15/45/30 分钟分段）；评审 3 轮均为 85 分，修订 2 次后按 `MAX_REVISIONS` 封顶 |
+| qwen2.5:7b（CrewAI） | 4 min | 4 个任务全部完成，产出 393 行，结构完整但比 mock 啰嗦 4 倍 |
+
+### 为此做了四件事
+
+1. **硬约束（`small_only`）**：小模型档位才追加「只做一次 90 分钟」「不超过 500 字」这类边界，大模型不加。
+2. **结构化输出 + 校验重试（`complete_json`）**：字段缺失/类型不对，就把错误回灌给模型重试，最多 2 次。
+3. **一致性纠正 + 路由改为 `verdict && score`**：宁可判不通过，也别被"高分低评"骗过去放行。
+4. **输出上限**：小模型默认 `max_tokens=900`，结构化调用温度 0。
+
+档位自动判定：模型名里含 `7b`/`8b`/`mini`/`flash` 等即视为小模型，也可用 `AGENT_PROFILE=small|large` 强制。
+CrewAI 侧 LiteLLM 需要 `provider/model` 形式，接本地服务时会自动补 `openai/` 前缀。
+
+### 换模型前先体检
+
+```bash
+AGENT_LLM=openai OPENAI_BASE_URL=http://localhost:11434/v1 OPENAI_API_KEY=ollama \
+  ../../../.venv/bin/python bench_models.py --models qwen2.5:7b qwen3:8b --runs 2
+```
+
+它测三件与模型规模强相关、又最容易让 Agent 崩掉的事：
+
+| 检查项 | 为什么重要 |
+|---|---|
+| JSON 合规率 | 评审/打分节点能不能用 |
+| 是否守住 90 分钟 | 指令跟随，跑偏一次整份教案就废了 |
+| 平均耗时 / 字数 | 决定迭代速度和 token 成本 |
+
+实测（同一组 prompt，各 2 轮）：
+
+| 模型 | JSON 合规 | 守住 90 分钟 | 平均耗时 | 平均字数 |
+|---|---|---|---|---|
+| `qwen2.5:7b` | 2/2 | 2/2 | 7.7 s | 402 |
+| `qwen3:8b` | 2/2 | 2/2 | 24.9 s | 381 |
+
+注意这个结果**不代表小模型没问题**：单条 prompt 它们都能过，但放进完整流程里就退化了——
+上面「未适配」那行的 64 秒里，7B 同时做到了「跑偏成 4 周」和「85 分 + needs_revision」两件事。
+原因是多步流程里上下文不断变长、上游产出质量参差，模型在第 3、4 步时已经偏离了第一条指令。
+
+**结论**：7B 级模型在"能说人话"上够用，在"守格式、守边界"上必须靠代码兜底——
+这就是把校验、重试、回环上限写成代码而不是 prompt 的原因。
+
+
 ## 两个框架怎么选
 
 | 维度 | LangGraph | CrewAI |
@@ -126,9 +190,10 @@ export AGENT_MODEL=gpt-4o-mini          # 或 deepseek-chat / qwen-plus
 
 ```
 medical-education/
-├── common/llm.py               # 统一 LLM 适配层（mock / openai）
+├── common/llm.py               # 统一 LLM 适配层（mock / openai / 小模型档位）
 ├── langgraph_case_agent.py     # 例 1
 ├── crewai_teaching_activity.py # 例 2
+├── bench_models.py             # 模型体检：JSON 合规 / 指令边界 / 速度
 ├── requirements.txt
 └── out/                        # 生成的教案
 ```

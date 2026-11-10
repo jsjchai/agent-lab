@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import operator
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -40,10 +41,24 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from langgraph.graph import END, START, StateGraph  # noqa: E402
 
-from common.llm import LLMClient, describe, extract_json  # noqa: E402
+from common.llm import LLMClient, describe, is_small_model, small_only  # noqa: E402
 
 PASS_SCORE = 80
 MAX_REVISIONS = 2
+
+
+def _validate_review(data: dict) -> str | None:
+    """校验评审 JSON。小模型经常漏字段、把分数写成字符串，这里逐个卡死。"""
+    if not isinstance(data, dict):
+        return "顶层必须是 JSON 对象"
+    score = data.get("score")
+    if isinstance(score, bool) or not isinstance(score, int) or not 0 <= score <= 100:
+        return "score 必须是 0-100 的整数"
+    if data.get("verdict") not in {"pass", "needs_revision"}:
+        return 'verdict 必须是 "pass" 或 "needs_revision"'
+    if not isinstance(data.get("issues"), list):
+        return "issues 必须是字符串数组（可以为空数组）"
+    return None
 
 
 # --------------------------------------------------------------------------- 状态
@@ -78,6 +93,7 @@ def build_graph(llm: LLMClient):
             f"学习者：{state['level']}\n"
             "请设计 3 条可观察、可评价的教学目标（知识/技能/素养各一条），"
             "并给出时长分配与评价方式建议。"
+            + small_only("这是**一次 90 分钟**的床旁教学，不要写多周课程表；整体不超过 400 字。")
         )
         return {"objectives": llm.complete("plan", system, user), "notes": ["plan 完成"]}
 
@@ -92,6 +108,7 @@ def build_graph(llm: LLMClient):
             f"已定教学目标：\n{state['objectives']}\n"
             "请写一份教学病例，包含主诉、现病史、既往史、查体、辅助检查，"
             "并在末尾写一段「教学提示」说明设计意图。"
+            + small_only("只写这 6 个小节，不要加别的章节；总字数不超过 500 字；不要给出诊断结论。")
         )
         return {"case_text": llm.complete("case", system, user), "notes": ["draft_case 完成"]}
 
@@ -103,6 +120,7 @@ def build_graph(llm: LLMClient):
             f"病例：\n{state['case_text']}\n"
             "请出 3 道题，分别对应记忆/理解、应用、分析/评价三个层次，"
             "每题给出参考答案和评分要点。"
+            + small_only("恰好 3 道题，不要写前言、总结或额外说明；每题不超过 5 行。")
         )
         return {"questions": llm.complete("questions", system, user), "notes": ["design_questions 完成"]}
 
@@ -120,7 +138,18 @@ def build_graph(llm: LLMClient):
             f"分层问题：\n{state['questions']}\n\n"
             "请评审。注意：病例是否支持目标？问题是否真正分层？有没有临床错误？"
         )
-        result = extract_json(llm.complete("review", system, user, temperature=0.1))
+        result = llm.complete_json("review", system, user, validate=_validate_review, retries=2)
+        if "_error" in result:
+            print(f"    ⚠ 评审输出不可用（已重试）：{result['_error']}")
+            result = {
+                "score": 0,
+                "verdict": "needs_revision",
+                "issues": [f"评审模型输出无法解析（{result['_error']}），需人工复核"],
+                "suggestion": "",
+            }
+        # 一致性纠正：小模型常出现「给高分 + 列一堆问题」，宁可判不通过也别放行
+        if result.get("issues") and result.get("verdict") == "pass":
+            result["verdict"] = "needs_revision"
         print(f"    评分 {result.get('score')}（{result.get('verdict')}），问题 {len(result.get('issues', []))} 条")
         return {"review": result, "reviews": [result], "notes": [f"review 评分 {result.get('score')}"]}
 
@@ -187,7 +216,9 @@ def build_graph(llm: LLMClient):
         review = state.get("review", {})
         score = review.get("score", 0)
         revisions = state.get("revisions", 0)
-        if score >= PASS_SCORE or revisions >= MAX_REVISIONS:
+        # 分数和结论必须同时满足；只看分数会被"高分低评"的小模型骗过去
+        passed = review.get("verdict") == "pass" and score >= PASS_SCORE
+        if passed or revisions >= MAX_REVISIONS:
             return "finalize"
         return "revise"
 
@@ -223,8 +254,12 @@ def main() -> int:
     parser.add_argument("--topic", default="社区获得性肺炎（CAP）", help="教学主题")
     parser.add_argument("--level", default="住院医师规范化培训第一年（R1）", help="学习者层级")
     parser.add_argument("--out", default="out/langgraph_teaching_case.md", help="输出 Markdown 路径")
+    parser.add_argument("--model", default=None, help="覆盖 AGENT_MODEL，例如 qwen2.5:7b")
     parser.add_argument("--show-graph", action="store_true", help="打印 Mermaid 图定义后退出")
     args = parser.parse_args()
+
+    if args.model:
+        os.environ["AGENT_MODEL"] = args.model
 
     print(f"【LangGraph 示例】{describe()}")
 

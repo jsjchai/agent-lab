@@ -36,12 +36,33 @@ def model_name() -> str:
     return os.getenv("AGENT_MODEL", DEFAULT_MODEL)
 
 
+def is_small_model() -> bool:
+    """判断当前是不是"小模型"档位。
+
+    可以用 AGENT_PROFILE=small|large 强制指定；默认按模型名里的参数规模猜。
+    小模型（7B/8B 级）在**长指令**和**格式稳定性**上明显更差，需要更硬的约束。
+    """
+    forced = os.getenv("AGENT_PROFILE", "auto").strip().lower()
+    if forced in {"small", "large"}:
+        return forced == "small"
+    name = model_name().lower()
+    if re.search(r"(?:^|[^0-9])(?:[1-9]|1[0-4])b(?:[^0-9]|$)", name):
+        return True
+    return any(tag in name for tag in ("mini", "tiny", "small", "flash", "lite"))
+
+
+def small_only(rule: str) -> str:
+    """只在小模型档位追加的硬约束（大模型不需要，加了反而啰嗦）。"""
+    return f"\n\n硬约束：{rule}" if is_small_model() else ""
+
+
 def describe() -> str:
     """给 CLI 打印用的一行环境说明。"""
     if current_mode() == "mock":
         return "LLM 后端：mock（离线，无需 API key）"
     base = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
-    return f"LLM 后端：openai（model={model_name()}, base_url={base}）"
+    tier = "小模型档位：已启用硬约束" if is_small_model() else "大模型档位"
+    return f"LLM 后端：openai（model={model_name()}, base_url={base}，{tier}）"
 
 
 # --------------------------------------------------------------------------- 工具
@@ -315,7 +336,7 @@ class LLMClient:
             raise ValueError(f"未知 AGENT_LLM={self.mode!r}，只支持 mock / openai")
 
     # -- 真实后端
-    def _openai(self, system: str, user: str, temperature: float) -> str:
+    def _openai(self, system: str, user: str, temperature: float, max_tokens: int | None = None) -> str:
         if self._client is None:
             from openai import OpenAI  # 延迟导入：mock 模式不需要这个包
 
@@ -326,9 +347,13 @@ class LLMClient:
                     "想离线运行请 export AGENT_LLM=mock"
                 )
             self._client = OpenAI(api_key=api_key, base_url=os.getenv("OPENAI_BASE_URL") or None)
+        # 小模型容易啰嗦，默认压一下输出长度；大模型不设限
+        if max_tokens is None and is_small_model():
+            max_tokens = 900
         resp = self._client.chat.completions.create(
             model=model_name(),
             temperature=temperature,
+            max_tokens=max_tokens,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -337,14 +362,50 @@ class LLMClient:
         return resp.choices[0].message.content or ""
 
     # -- 统一入口
-    def complete(self, scene: str, system: str, user: str, temperature: float = 0.3) -> str:
+    def complete(
+        self,
+        scene: str,
+        system: str,
+        user: str,
+        temperature: float = 0.3,
+        max_tokens: int | None = None,
+    ) -> str:
         """scene 是给 mock 用的路由键，真实模型会忽略它。"""
         if self.mode == "openai":
-            return self._openai(system, user, temperature)
+            return self._openai(system, user, temperature, max_tokens)
         handler = _SCENES.get(scene)
         if handler is None:
             raise KeyError(f"mock 模式没有定义 scene={scene!r}，可选：{sorted(_SCENES)}")
         return handler(user)
+
+    # -- 结构化输出：小模型最容易在这里翻车，所以带校验和重试
+    def complete_json(
+        self,
+        scene: str,
+        system: str,
+        user: str,
+        validate,
+        retries: int = 2,
+        temperature: float = 0.0,
+    ) -> dict[str, Any]:
+        """要求模型输出 JSON，并用 validate 校验；不合格就把错误回灌给它重试。
+
+        validate(data) -> None 表示通过，返回字符串表示不合格原因。
+        重试仍失败时返回 {"_error": 原因, "_raw": 原始输出}，让调用方决定怎么兜底。
+        """
+        raw = ""
+        reason = "未知错误"
+        for attempt in range(retries + 1):
+            feedback = "" if attempt == 0 else (
+                f"\n\n上一次输出不合格，原因：{reason}\n"
+                "请只输出一个合法 JSON 对象，不要解释、不要 Markdown 代码块。"
+            )
+            raw = self.complete(scene, system, user + feedback, temperature=temperature)
+            data = extract_json(raw)
+            reason = validate(data) or ""
+            if not reason:
+                return data
+        return {"_error": reason, "_raw": raw}
 
 
 _SCENES = {
@@ -396,11 +457,18 @@ def make_crewai_llm():
 
     from crewai import LLM
 
+    # LiteLLM 需要 "provider/model" 形式。接本地 Ollama / vLLM 时模型名通常没有前缀，
+    # 这类 OpenAI 兼容服务统一走 openai/ 通道。
+    model = model_name()
+    if "/" not in model:
+        model = f"openai/{model}"
+
     return LLM(
-        model=model_name(),
+        model=model,
         temperature=0.4,
         base_url=os.getenv("OPENAI_BASE_URL") or None,
-        api_key=os.getenv("OPENAI_API_KEY"),
+        api_key=os.getenv("OPENAI_API_KEY") or "not-needed",
+        timeout=180,  # 本地小模型首 token 可能较慢
     )
 
 
