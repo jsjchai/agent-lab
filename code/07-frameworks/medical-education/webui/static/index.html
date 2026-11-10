@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="LangGraph 评审回环与 CrewAI 多角色协作的医疗教学 Agent 可视化演示">
+<title>医疗教学 Agent · 可视化</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="container topbar-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><span></span><span></span></div>
+      <div class="brand-text">
+        <h1>医疗教学 Agent · 可视化</h1>
+        <p class="subtitle">同一个备课任务，两种 Agent 组织方式：LangGraph 画流程 + 评审回环，CrewAI 组班子 + 多角色接力。</p>
+      </div>
+    </div>
+    <div class="run-status" aria-live="polite">
+      <span class="status-dot idle" id="statusDot"></span>
+      <span class="status-text" id="statusText">就绪</span>
+      <span class="timer" id="timer" title="运行计时">00:00.0</span>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="error-bar" id="errorBar" role="alert" hidden>
+    <span class="error-icon" aria-hidden="true">!</span>
+    <span class="error-text" id="errorText"></span>
+    <button type="button" class="error-close" id="errorClose" aria-label="关闭错误提示">×</button>
+  </div>
+
+  <section class="control-panel" aria-label="运行控制">
+    <div class="tabs" role="tablist" aria-label="选择示例">
+      <button type="button" class="tab active" id="tab-langgraph" role="tab" aria-selected="true"
+              aria-controls="view-langgraph" data-example="langgraph">LangGraph · 评审回环</button>
+      <button type="button" class="tab" id="tab-crewai" role="tab" aria-selected="false"
+              aria-controls="view-crewai" data-example="crewai">CrewAI · 多角色协作</button>
+    </div>
+    <div class="controls">
+      <label class="field field-model">
+        <span class="field-label">模式</span>
+        <select id="modelSelect" aria-label="选择模型">
+          <option value="mock">mock</option>
+          <option value="qwen2.5:7b">qwen2.5:7b</option>
+          <option value="qwen3:8b">qwen3:8b</option>
+        </select>
+      </label>
+      <label class="field field-topic">
+        <span class="field-label">主题</span>
+        <input id="topicInput" type="text" value="社区获得性肺炎（CAP）"
+               placeholder="输入教学主题" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="actions">
+        <button type="button" class="btn primary" id="runBtn">▶ 运行</button>
+        <button type="button" class="btn ghost" id="resetBtn">重置</button>
+      </div>
+    </div>
+    <div class="ticker" id="ticker" hidden>
+      <span class="ticker-label">动态</span>
+      <span class="ticker-text" id="logText"></span>
+    </div>
+  </section>
+
+  <div class="workspace">
+    <!-- ============================ LangGraph 视图 ============================ -->
+    <section class="view" id="view-langgraph" role="tabpanel" aria-labelledby="tab-langgraph">
+      <div class="col col-left">
+        <section class="panel flow-panel" aria-label="LangGraph 流程">
+          <header class="panel-head">
+            <h2>流程 · 状态机</h2>
+            <span class="panel-hint">6 个节点共享一份 state，条件边决定是否回退</span>
+          </header>
+          <div class="flow-scroll">
+            <div class="flow" id="flow">
+              <div class="flow-node pending" data-node="plan" title="设计教学目标">
+                <span class="node-icon" aria-hidden="true"></span>
+                <span class="node-name">plan</span>
+                <span class="node-label">教学目标</span>
+              </div>
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <div class="flow-node pending" data-node="draft_case" title="生成教学病例">
+                <span class="node-icon" aria-hidden="true"></span>
+                <span class="node-name">draft_case</span>
+                <span class="node-label">教学病例</span>
+              </div>
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <div class="flow-node pending" data-node="design_questions" title="设计分层问题">
+                <span class="node-icon" aria-hidden="true"></span>
+                <span class="node-name">design_questions</span>
+                <span class="node-label">分层问题</span>
+              </div>
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <div class="flow-node pending" data-node="review" title="专家评审：打分 + 问题清单">
+                <span class="node-icon" aria-hidden="true"></span>
+                <span class="node-name">review</span>
+                <span class="node-label">专家评审</span>
+              </div>
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <div class="flow-node pending" data-node="revise" title="按评审意见修订">
+                <span class="node-icon" aria-hidden="true"></span>
+                <span class="node-name">revise</span>
+                <span class="node-label">修订</span>
+              </div>
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <div class="flow-node pending" data-node="finalize" title="组装最终教案 Markdown">
+                <span class="node-icon" aria-hidden="true"></span>
+                <span class="node-name">finalize</span>
+                <span class="node-label">定稿</span>
+              </div>
+              <div class="flow-loop" aria-hidden="true">
+                <span class="flow-loop-label">↺ 评分 &lt; 80 回退重做</span>
+              </div>
+            </div>
+          </div>
+          <div class="flow-foot">
+            <div class="legend">
+              <span class="legend-item"><i class="legend-dot pending"></i>待执行</span>
+              <span class="legend-item"><i class="legend-dot running"></i>执行中</span>
+              <span class="legend-item"><i class="legend-dot done"></i>已完成</span>
+            </div>
+            <p class="flow-note">review 不通过时，<code>revise</code> 重做并回到 <code>review</code>，最多 2 轮；仍不通过则带着评分进入 <code>finalize</code>。</p>
+          </div>
+        </section>
+
+        <section class="panel review-panel" aria-label="专家评审结果">
+          <header class="panel-head">
+            <h2>专家评审</h2>
+            <span class="panel-hint">每轮给出 score / verdict / issues</span>
+          </header>
+          <div class="review-list" id="reviewList">
+            <p class="empty-hint">点击「运行」，看看评审为什么把教案打回。</p>
+          </div>
+        </section>
+      </div>
+
+      <div class="col col-right">
+        <section class="panel output-panel" aria-label="LangGraph 生成内容">
+          <header class="panel-head">
+            <h2>生成内容</h2>
+            <span class="panel-hint">节点产出可折叠，最终教案自动渲染</span>
+          </header>
+          <div class="folds">
+            <details class="fold" data-key="objectives" open>
+              <summary>
+                <span class="fold-title">教学目标</span>
+                <span class="fold-status">待生成</span>
+              </summary>
+              <div class="fold-body prose" data-body="objectives">
+                <p class="empty-hint">plan 节点会先生成教学目标。</p>
+              </div>
+            </details>
+            <details class="fold" data-key="case_text">
+              <summary>
+                <span class="fold-title">教学病例</span>
+                <span class="fold-status">待生成</span>
+              </summary>
+              <div class="fold-body prose" data-body="case_text">
+                <p class="empty-hint">draft_case 节点生成教学病例；revise 会覆盖为修订版。</p>
+              </div>
+            </details>
+            <details class="fold" data-key="questions">
+              <summary>
+                <span class="fold-title">分层问题</span>
+                <span class="fold-status">待生成</span>
+              </summary>
+              <div class="fold-body prose" data-body="questions">
+                <p class="empty-hint">design_questions 节点生成分层问题。</p>
+              </div>
+            </details>
+          </div>
+          <div class="final-block">
+            <h3 class="final-title">最终教案</h3>
+            <div class="prose final-markdown" id="lgFinal">
+              <p class="empty-hint">运行结束后，这里会显示完整教案（Markdown 渲染）。</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ============================== CrewAI 视图 ============================== -->
+    <section class="view hidden" id="view-crewai" role="tabpanel" aria-labelledby="tab-crewai">
+      <div class="col col-left">
+        <section class="panel crew-panel" aria-label="CrewAI 角色与任务">
+          <header class="panel-head">
+            <h2>角色 · 任务链</h2>
+            <span class="panel-hint">Process.sequential：上一环产出自动成为下一环上下文</span>
+          </header>
+          <div class="crew-list" id="crewList">
+            <article class="agent-card" data-task="design">
+              <div class="agent-head">
+                <span class="avatar" aria-hidden="true">教</span>
+                <div class="agent-id">
+                  <h3>教学设计专家</h3>
+                  <span class="agent-sub">designer · 起点</span>
+                </div>
+                <span class="agent-state waiting" data-state><i class="state-dot"></i>等待</span>
+              </div>
+              <p class="agent-desc">把一次 60 分钟查房拆成目标可测量、时间可执行的课。</p>
+              <div class="agent-meta">
+                <span class="chip">输入：主题 · 学员层级</span>
+                <span class="chip">产出：目标 · 时间表</span>
+              </div>
+              <div class="agent-output" data-output><p class="empty-hint">等待任务开始…</p></div>
+              <button type="button" class="expand-btn" data-expand hidden>展开全文</button>
+            </article>
+
+            <article class="agent-card" data-task="clinic">
+              <div class="agent-head">
+                <span class="avatar" aria-hidden="true">心</span>
+                <div class="agent-id">
+                  <h3>心内科带教老师</h3>
+                  <span class="agent-sub">cardiologist · 读教学设计</span>
+                </div>
+                <span class="agent-state waiting" data-state><i class="state-dot"></i>等待</span>
+              </div>
+              <p class="agent-desc">讲清真正决定患者结局的临床要点，以及学员最容易犯的错误。</p>
+              <div class="agent-meta">
+                <span class="chip">上下文：教学设计</span>
+                <span class="chip">产出：临床要点 · 追问链</span>
+              </div>
+              <div class="agent-output" data-output><p class="empty-hint">等待任务开始…</p></div>
+              <button type="button" class="expand-btn" data-expand hidden>展开全文</button>
+            </article>
+
+            <article class="agent-card" data-task="assess">
+              <div class="agent-head">
+                <span class="avatar" aria-hidden="true">考</span>
+                <div class="agent-id">
+                  <h3>考核评价专家</h3>
+                  <span class="agent-sub">assessor · 读前两环</span>
+                </div>
+                <span class="agent-state waiting" data-state><i class="state-dot"></i>等待</span>
+              </div>
+              <p class="agent-desc">设计能真正区分「会背」和「会用」的评价工具与反馈机制。</p>
+              <div class="agent-meta">
+                <span class="chip">上下文：教学目标 · 临床要点</span>
+                <span class="chip">产出：Mini-CEX · 病例题</span>
+              </div>
+              <div class="agent-output" data-output><p class="empty-hint">等待任务开始…</p></div>
+              <button type="button" class="expand-btn" data-expand hidden>展开全文</button>
+            </article>
+
+            <article class="agent-card" data-task="summary">
+              <div class="agent-head">
+                <span class="avatar" aria-hidden="true">组</span>
+                <div class="agent-id">
+                  <h3>教研组长</h3>
+                  <span class="agent-sub">lead · 汇总整合</span>
+                </div>
+                <span class="agent-state waiting" data-state><i class="state-dot"></i>等待</span>
+              </div>
+              <p class="agent-desc">把三份产出整合成一份可以直接拿去上课的完整教案。</p>
+              <div class="agent-meta">
+                <span class="chip">上下文：前三份产出</span>
+                <span class="chip">产出：完整教案</span>
+              </div>
+              <div class="agent-output" data-output><p class="empty-hint">等待任务开始…</p></div>
+              <button type="button" class="expand-btn" data-expand hidden>展开全文</button>
+            </article>
+          </div>
+          <p class="crew-note">教学设计 → 临床要点 → 考核评价 → 汇总整合，四张角色卡依次接力；没有回环，这正是 CrewAI 与 LangGraph 的关键差异。</p>
+        </section>
+      </div>
+
+      <div class="col col-right">
+        <section class="panel output-panel crew-output-panel" aria-label="CrewAI 整合教案">
+          <header class="panel-head">
+            <h2>整合后的完整教案</h2>
+            <span class="panel-hint">由教研组长在最后一个任务中汇总产出</span>
+          </header>
+          <div class="prose final-markdown crew-final" id="crewFinal">
+            <p class="empty-hint">点击「运行」，看看四位角色如何接力产出一份完整教案。</p>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <span class="footer-mark" aria-hidden="true">⚕</span>
+    本页面内容为模拟病例，仅用于教学演练。
+  </footer>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -51,6 +51,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -109,7 +110,8 @@ os.environ.setdefault("OTEL_SDK_DISABLED", "true")
 
 from crewai import Agent, Crew, Process, Task  # noqa: E402
 
-from common.llm import current_mode, describe, make_crewai_llm  # noqa: E402
+from common.events import emit, enable_json_events  # noqa: E402
+from common.llm import current_mode, describe, make_crewai_llm, model_name  # noqa: E402
 
 # --------------------------------------------------------------------------- 常量
 DEFAULT_TOPIC = "急性胸痛（STEMI 鉴别）"
@@ -471,11 +473,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="打印每个 Agent 的思考过程（调试用，输出较长）",
     )
+    parser.add_argument(
+        "--emit-json",
+        action="store_true",
+        help="以 NDJSON 输出运行事件（供 Web 界面消费）",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    if args.emit_json:
+        enable_json_events()
+    emit(
+        type="start",
+        example="crewai",
+        topic=args.topic,
+        model="mock" if current_mode() == "mock" else model_name(),
+        mode=current_mode(),
+    )
 
     # ---- 环境说明 ----------------------------------------------------------
     if _HOME_REDIRECT_MSG:
@@ -500,10 +516,29 @@ def main(argv: list[str] | None = None) -> int:
 
     crew = make_crew(agents, tasks, verbose=args.verbose)
 
+    # ---- 事件：每个 Task 完成时把产出推给 Web 端 ---------------------------
+    STAGE_KEYS = ["design", "clinic", "assess", "summary"]
+
+    def make_callback(index: int):
+        def _cb(output) -> None:
+            text = getattr(output, "raw", None) or str(output)
+            emit(type="task", task=STAGE_KEYS[index], phase="end", output=text)
+            if index + 1 < len(STAGE_KEYS):
+                emit(type="task", task=STAGE_KEYS[index + 1], phase="start")
+
+        return _cb
+
+    for _i, _task in enumerate(tasks):
+        _task.callback = make_callback(_i)
+
+    emit(type="task", task="design", phase="start")
+    started = time.perf_counter()
+
     # ---- 执行 --------------------------------------------------------------
     try:
         result = crew.kickoff()
     except Exception as exc:  # noqa: BLE001 —— 教学示例：把错误说明白比抛栈更有用
+        emit(type="error", message=f"{type(exc).__name__}: {exc}")
         print(f"\n[错误] Crew 执行失败：{exc}", file=sys.stderr)
         print(
             "排查建议：1) 确认 AGENT_LLM=mock；2) 对照已安装版本检查 "
@@ -540,6 +575,12 @@ def main(argv: list[str] | None = None) -> int:
         print(line)
     print("-" * 64)
     print("完成。CrewAI 负责了：拼 prompt、按 sequential 调度 Task、用 context 传上下文、解析 Final Answer。")
+    emit(
+        type="done",
+        markdown=markdown,
+        elapsed=round(time.perf_counter() - started, 2),
+        meta={"stages": STAGE_NAMES, "out": str(out_path)},
+    )
     return 0
 
 

@@ -34,6 +34,31 @@ AGENT_LLM=mock ../../../.venv/bin/python langgraph_case_agent.py --topic "急性
 AGENT_LLM=mock ../../../.venv/bin/python crewai_teaching_activity.py --topic "急性腹痛"
 ```
 
+## 可视化页面（想快速理解，先看这个）
+
+```bash
+cd code/07-frameworks/medical-education
+../../../.venv/bin/python webui/server.py
+# 浏览器打开 http://127.0.0.1:7861
+```
+
+页面上能做的事：
+
+- **两个 Tab** 对应两个例子；模型下拉可选 `mock` / `qwen2.5:7b` / `qwen3:8b`，选 mock 一两秒出结果。
+- **LangGraph 页**：流程条逐节点点亮，评审分数、打回原因、修订轮次实时出现——
+  能直接看到 `revise` 绕回 `review` 的那根回环箭头，以及分数卡在 85 分、修订两次后封顶的全过程。
+- **CrewAI 页**：4 张角色卡依次点亮，每张卡里是该角色交付的内容，最后拼成完整教案。
+- 页面底部渲染最终教案（自己实现的 Markdown 渲染，无外部依赖，可离线用）。
+
+![可视化页面](webui/screenshot.png)
+
+实现只有三件事（约 250 行）：
+
+1. 两个脚本加 `--emit-json` 后，运行过程以 NDJSON 写到 stdout，人读日志转到 stderr，**CLI 用法完全不变**；
+2. [webui/server.py](webui/server.py) 用 FastAPI 起子进程、把 stdout 转成 SSE 推给浏览器；
+3. 子进程而不是直接 import：CrewAI 在 import 阶段就会初始化本地存储，塞进 Web 进程会放大启动时间和故障面，
+   而子进程可以被超时杀掉、不会拖死服务。
+
 ## 为什么要做 mock 模式
 
 两个例子的**流程**（状态机、回环、任务编排）与模型能力无关，但**内容质量**强烈依赖模型。
@@ -192,10 +217,15 @@ AGENT_LLM=openai OPENAI_BASE_URL=http://localhost:11434/v1 OPENAI_API_KEY=ollama
 
 ```
 medical-education/
-├── common/llm.py               # 统一 LLM 适配层（mock / openai / 小模型档位）
+├── common/
+│   ├── llm.py                  # 统一 LLM 适配层（mock / openai / 小模型档位）
+│   └── events.py               # 事件通道（--emit-json 时输出 NDJSON）
 ├── langgraph_case_agent.py     # 例 1
 ├── crewai_teaching_activity.py # 例 2
 ├── bench_models.py             # 模型体检：JSON 合规 / 指令边界 / 速度
+├── webui/                      # 可视化页面（FastAPI + 原生前端）
+│   ├── server.py
+│   └── static/                 # index.html / app.js / style.css
 ├── requirements.txt
 └── out/                        # 生成的教案
 ```

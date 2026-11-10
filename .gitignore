@@ -51,3 +51,13 @@ outputs/
 .home/
 .crewai-home/
 .crewai/
+
+# Web 界面运行时产物
+code/07-frameworks/medical-education/out/web_*.md
+
+# 前端调试用的临时 Chrome profile
+.tmp-ui-chrome*/
+
+# IDE
+.idea/
+.vscode/

@@ -33,6 +33,7 @@ import argparse
 import operator
 import os
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, TypedDict
@@ -41,7 +42,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from langgraph.graph import END, START, StateGraph  # noqa: E402
 
-from common.llm import LLMClient, describe, is_small_model, small_only  # noqa: E402
+from common.events import emit, enable_json_events  # noqa: E402
+from common.llm import (  # noqa: E402
+    LLMClient,
+    current_mode,
+    describe,
+    is_small_model,
+    model_name,
+    small_only,
+)
 
 PASS_SCORE = 80
 MAX_REVISIONS = 2
@@ -223,6 +232,39 @@ def build_graph(llm: LLMClient):
         return "revise"
 
     graph = StateGraph(TeachingState)
+
+    # -- 给每个节点套一层"事件追踪"：CLI 无感知，Web 端能看到每一步在跑什么
+    NODE_LABELS = {
+        "plan": "教学目标",
+        "draft_case": "教学病例",
+        "design_questions": "分层问题",
+        "review": "专家评审",
+        "revise": "修订",
+        "finalize": "组装教案",
+    }
+
+    def traced(name: str, fn):
+        def inner(state: TeachingState) -> dict:
+            emit(type="node", node=name, phase="start", label=NODE_LABELS.get(name, name))
+            out = fn(state)
+            emit(type="node", node=name, phase="end", label=NODE_LABELS.get(name, name))
+            for key in ("objectives", "case_text", "questions"):
+                if key in out:
+                    emit(type="state", key=key, value=out[key])
+            if "review" in out:
+                review = out["review"]
+                emit(
+                    type="review",
+                    score=review.get("score"),
+                    verdict=review.get("verdict"),
+                    issues=review.get("issues", []),
+                    round=len(state.get("reviews", [])) + 1,
+                    revisions=state.get("revisions", 0),
+                )
+            return out
+
+        return inner
+
     for name, fn in [
         ("plan", plan),
         ("draft_case", draft_case),
@@ -231,7 +273,7 @@ def build_graph(llm: LLMClient):
         ("revise", revise),
         ("finalize", finalize),
     ]:
-        graph.add_node(name, fn)
+        graph.add_node(name, traced(name, fn))
 
     graph.add_edge(START, "plan")
     graph.add_edge("plan", "draft_case")
@@ -256,8 +298,13 @@ def main() -> int:
     parser.add_argument("--out", default="out/langgraph_teaching_case.md", help="输出 Markdown 路径")
     parser.add_argument("--model", default=None, help="覆盖 AGENT_MODEL，例如 qwen2.5:7b")
     parser.add_argument("--show-graph", action="store_true", help="打印 Mermaid 图定义后退出")
+    parser.add_argument(
+        "--emit-json", action="store_true", help="以 NDJSON 输出运行事件（供 Web 界面消费）"
+    )
     args = parser.parse_args()
 
+    if args.emit_json:
+        enable_json_events()
     if args.model:
         os.environ["AGENT_MODEL"] = args.model
 
@@ -279,8 +326,20 @@ def main() -> int:
     }
 
     print(f"\n开始生成：{args.topic} / {args.level}")
-    # recursion_limit 是"防跑飞"的保险丝：节点执行步数上限
-    state = app.invoke(initial, config={"recursion_limit": 30})
+    emit(
+        type="start",
+        example="langgraph",
+        topic=args.topic,
+        model="mock" if current_mode() == "mock" else model_name(),
+        mode=current_mode(),
+    )
+    started = time.perf_counter()
+    try:
+        # recursion_limit 是"防跑飞"的保险丝：节点执行步数上限
+        state = app.invoke(initial, config={"recursion_limit": 30})
+    except Exception as exc:  # noqa: BLE001 —— 把错误交给 Web 端展示
+        emit(type="error", message=f"{type(exc).__name__}: {exc}")
+        raise
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -292,6 +351,16 @@ def main() -> int:
 
     print(f"\n✅ 已生成：{out_path}")
     print(f"   评审轮次：{len(state.get('reviews', []))} ｜ 修订：{state.get('revisions', 0)} 次")
+    emit(
+        type="done",
+        markdown=state["final_markdown"],
+        elapsed=round(time.perf_counter() - started, 2),
+        meta={
+            "rounds": len(state.get("reviews", [])),
+            "revisions": state.get("revisions", 0),
+            "out": str(out_path),
+        },
+    )
     return 0
 
 
