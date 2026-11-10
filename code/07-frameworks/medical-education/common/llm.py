@@ -346,7 +346,14 @@ class LLMClient:
                     "AGENT_LLM=openai 但没有设置 OPENAI_API_KEY。"
                     "想离线运行请 export AGENT_LLM=mock"
                 )
-            self._client = OpenAI(api_key=api_key, base_url=os.getenv("OPENAI_BASE_URL") or None)
+            # 本地小模型抖动很大：同一个请求可能 7 秒，也可能卡住几分钟。
+            # 不给超时的话，一次卡死会让整个流程静默 hang 住（实测踩过 41 分钟）。
+            self._client = OpenAI(
+                api_key=api_key,
+                base_url=os.getenv("OPENAI_BASE_URL") or None,
+                timeout=float(os.getenv("AGENT_TIMEOUT", "180")),
+                max_retries=int(os.getenv("AGENT_MAX_RETRIES", "1")),
+            )
         # 小模型容易啰嗦，默认压一下输出长度；大模型不设限
         if max_tokens is None and is_small_model():
             max_tokens = 900
