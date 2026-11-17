@@ -4,12 +4,45 @@ Agent 学习与实践仓库：**资料在 `docs/`，小步实验代码在 `code/
 
 默认面向 LLM Agent（工具调用 / 检索 / 多智能体 / 评测）。如果以后要加强化学习 Agent，也放进对应的 `01-10` 主题或 `projects/`，结构不用改。
 
+## 🚀 快速体验
+
+```bash
+# 克隆仓库
+git clone https://github.com/jsjchai/agent-lab.git
+cd agent-lab
+
+# 创建虚拟环境并安装依赖
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r code/07-frameworks/medical-education/requirements.txt
+
+# 运行医疗教学示例（离线 mock 模式，无需 API key）
+cd code/07-frameworks/medical-education
+AGENT_LLM=mock ../../../.venv/bin/python langgraph_case_agent.py
+AGENT_LLM=mock ../../../.venv/bin/python crewai_teaching_activity.py
+
+# 启动可视化界面
+../../../.venv/bin/python webui/server.py
+# 打开 http://127.0.0.1:7861
+```
+
+## ✅ 已完成内容
+
+| 模块 | 说明 | 状态 |
+|------|------|------|
+| [医疗教学 Agent](code/07-frameworks/medical-education/) | LangGraph vs CrewAI 对照实现，含可视化界面 | ☑ 完成 |
+| [Harness 扩展示例](code/07-frameworks/harness-examples/) | DeepSeek Harness 插件开发：Preset / Host Plugin / MCP Bundle | ☑ 完成 |
+| [小模型适配](code/07-frameworks/medical-education/README.md#小模型本地-7b8b怎么跑) | 7B/8B 本地模型适配、硬约束、JSON 校验重试 | ☑ 完成 |
+| [模型体检脚本](code/07-frameworks/medical-education/bench_models.py) | JSON 合规 / 指令边界 / 速度对比 | ☑ 完成 |
+
 ## 目录一览
 
 ```
 agent-lab/
 ├── docs/            # 学习资料：路线图、主题笔记、论文、日志
 ├── code/            # 跟学代码：按主题编号，与 docs 一一对应
+│   └── 07-frameworks/
+│       ├── medical-education/   # LangGraph vs CrewAI + 可视化界面
+│       └── harness-examples/    # DeepSeek Harness 插件开发示例
 ├── notebooks/       # 探索性实验（不追求整洁）
 ├── projects/        # 端到端项目：有自己的 README、依赖、入口
 ├── evals/           # 评测集、评测脚本、trace 样本
@@ -39,7 +72,7 @@ agent-lab/
 | 04 | [memory-rag](docs/04-memory-rag/) | 短期/长期记忆、检索、知识库 |
 | 05 | [planning](docs/05-planning/) | 任务分解、反思、搜索与自我修正 |
 | 06 | [multi-agent](docs/06-multi-agent/) | 角色分工、通信、编排与冲突 |
-| 07 | [frameworks](docs/07-frameworks/) | LangGraph / OpenAI Agents SDK / Claude Agent SDK 等选型 |
+| 07 | [frameworks](docs/07-frameworks/) | LangGraph / CrewAI / DeepSeek Harness 等选型 |
 | 08 | [eval-observability](docs/08-eval-observability/) | 评测集、LLM-as-judge、tracing |
 | 09 | [safety-guardrails](docs/09-safety-guardrails/) | 注入攻击、权限、人类确认、合规 |
 | 10 | [production](docs/10-production/) | 成本、延迟、并发、部署、监控 |
@@ -53,7 +86,9 @@ agent-lab/
 
 **阶段二 · 把能力补齐（约 3~4 周）**
 - [ ] 04 + 05：加检索与记忆，做一次任务分解
-- [ ] 07：用 LangGraph 或官方 SDK 重写阶段一的 mini agent，对比差异
+- [x] 07：用 LangGraph / CrewAI / DeepSeek Harness 重写阶段一的 mini agent，对比差异
+  - ✅ [医疗教学 Agent](code/07-frameworks/medical-education/)：LangGraph vs CrewAI 对照实现
+  - ✅ [Harness 扩展示例](code/07-frameworks/harness-examples/)：DSH 插件开发三种方式
 - 交付物：`projects/` 里第一个能解决真实问题的小工具
 
 **阶段三 · 把工程做扎实（约 4~6 周）**
@@ -75,9 +110,56 @@ agent-lab/
 ## 快速开始
 
 ```bash
-git init
-python3 -m venv .venv && source .venv/bin/activate    # 或用 uv
-cp .env.example .env                                   # 填入自己的 API key
+# 克隆仓库
+git clone https://github.com/jsjchai/agent-lab.git
+cd agent-lab
+
+# 创建虚拟环境（推荐用 uv，更快）
+uv venv .venv --python 3.11
+source .venv/bin/activate
+
+# 安装医疗教学示例依赖
+uv pip install -r code/07-frameworks/medical-education/requirements.txt
+
+# 复制环境变量模板（可选，用于真实模型）
+cp .env.example .env
 ```
 
 依赖按主题需要再装，别提前堆一个巨大的 requirements。代码用到的库版本，记在对应主题目录的 `requirements.txt`。
+
+### 运行示例
+
+**医疗教学 Agent（离线 mock）**
+```bash
+cd code/07-frameworks/medical-education
+AGENT_LLM=mock ../../../.venv/bin/python langgraph_case_agent.py
+AGENT_LLM=mock ../../../.venv/bin/python crewai_teaching_activity.py
+```
+
+**可视化界面**
+```bash
+cd code/07-frameworks/medical-education
+../../../.venv/bin/python webui/server.py
+# 打开 http://127.0.0.1:7861
+```
+
+**使用本地小模型（Ollama）**
+```bash
+# 先启动 Ollama 并拉取模型
+ollama pull qwen2.5:7b
+
+# 运行
+export AGENT_LLM=openai
+export OPENAI_BASE_URL=http://localhost:11434/v1
+export OPENAI_API_KEY=ollama
+../../../.venv/bin/python langgraph_case_agent.py --model qwen2.5:7b
+```
+
+**DeepSeek Harness 插件**
+
+Harness 示例是配置型插件，通过 DSH Web GUI 安装：
+1. 打开 DSH → Plugins → Add plugin
+2. 选择 `code/07-frameworks/harness-examples/` 下的任一目录
+3. 启用后即可使用
+
+详见 [harness-examples/README.md](code/07-frameworks/harness-examples/README.md)。

@@ -10,7 +10,7 @@
 | 04 | [memory-rag](04-memory-rag/) | 该记什么、记在哪、什么时候取？检索为什么会失效？ | [code](../code/04-memory-rag/) | ☐ |
 | 05 | [planning](05-planning/) | 长任务怎么拆？什么时候该反思/重试？ | [code](../code/05-planning/) | ☐ |
 | 06 | [multi-agent](06-multi-agent/) | 什么时候多智能体真的比单智能体好？ | [code](../code/06-multi-agent/) | ☐ |
-| 07 | [frameworks](07-frameworks/) | 框架替你做了什么，代价是什么？ | [code](../code/07-frameworks/) | ☐ |
+| 07 | [frameworks](07-frameworks/) | 框架替你做了什么，代价是什么？ | [code](../code/07-frameworks/) | ◐ |
 | 08 | [eval-observability](08-eval-observability/) | 怎么证明这一版比上一版强？ | [code](../code/08-eval-observability/) | ☐ |
 | 09 | [safety-guardrails](09-safety-guardrails/) | 提示注入、越权操作怎么防？ | [code](../code/09-safety-guardrails/) | ☐ |
 | 10 | [production](10-production/) | 怎么把延迟和成本压下来并稳定上线？ | [code](../code/10-production/) | ☐ |
