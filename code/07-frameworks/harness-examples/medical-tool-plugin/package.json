@@ -1,0 +1,14 @@
+{
+  "name": "@local/dsh-medical-education-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./index.js" },
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ]
+}

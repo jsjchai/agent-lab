@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "天气 MCP 服务",
+    "description": "连接本地天气 MCP 服务器，提供天气查询功能。",
+    "detail": "docs/DETAIL.md"
+  }
+}

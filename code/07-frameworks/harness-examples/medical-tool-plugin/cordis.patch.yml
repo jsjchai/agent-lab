@@ -1,0 +1,13 @@
+# DeepSeek Harness Host 插件示例：医疗教学工具
+#
+# 这个插件为 Agent 提供两个自定义工具：
+# 1. medical_case_generator - 生成模拟临床病例
+# 2. teaching_plan_validator - 验证教学计划是否符合规范
+#
+# 安装方式：
+#   在 DSH Web GUI 的 Plugins 页面 → Add plugin → 选择此目录
+
+- insert:
+    - id: medical-education-tools
+      name: '@local/dsh-medical-education-tools'
+      config: {}

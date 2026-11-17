@@ -1,0 +1,22 @@
+# DeepSeek Harness MCP Bundle 示例：连接天气 MCP 服务
+#
+# 这个 bundle 演示了如何通过配置连接到外部 MCP (Model Context Protocol) 服务器。
+# MCP 是一种标准化协议，让 AI Agent 能够调用外部工具和服务。
+#
+# 本示例连接一个本地运行的天气 MCP 服务器（需要先启动）。
+#
+# 安装方式：
+#   1. 先启动 MCP 服务器（见下方说明）
+#   2. 在 DSH Web GUI 的 Plugins 页面 → Add plugin → 选择此目录
+#
+# 验证：
+#   安装后，Agent 可以调用 mcp__weather__get_weather 等工具
+
+- insert:
+    - id: weather-mcp
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: weather
+        transport: streamable-http
+        url: http://127.0.0.1:3001/mcp
+        failOnStartupError: false  # 设为 false 允许服务器未启动时也能加载插件

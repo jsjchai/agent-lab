@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Weather MCP Server",
+    "description": "Connect to a local weather MCP server for weather queries.",
+    "detail": "docs/DETAIL.md"
+  }
+}
