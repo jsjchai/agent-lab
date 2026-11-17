@@ -108,6 +108,27 @@ export TEACHING_EMBED_MODEL=bge-m3            # RAG 向量模型（Ollama）
 > mock 是**确定性替身**，用于验证流程与跑测试，不代表模型真实能力；
 > 接真实模型后建议重跑 m08 评测，观察指标变化（这正是文档「POC 实测校准门槛」的意思）。
 
+### 4. 可视化页面（可交互）
+
+```bash
+../../.venv/bin/python webui/server.py
+# 打开 http://127.0.0.1:7871
+```
+
+![可视化页面：草稿确认面板](webui/screenshot.png)
+
+三个面板：
+
+- **活动创建工作流**：选用户、输入需求 → 看流程图逐节点点亮 → 弹出澄清面板时**亲手输入答案** →
+  弹出草稿确认面板时**点确认** → 看到创建成功。完整演示 interrupt/恢复、一次性凭证、Checkpoint。
+  支持「按任务 ID 恢复」，刷新页面后状态仍在（SQLite 持久化）。
+- **知识问答**：切换 u1/u2(t1) 与 u3(t2) 体验 **ACL**——u1 问「文档入库的流程」检索不到 t2 文档；
+  无依据问题显示拒答。回答带引用徽章与检索片段卡片。
+- **评测与安全**：m08 六项指标对照门槛表 + m07 十二项安全测试清单。
+
+后端用请求/响应（而非医疗示例的 SSE 子进程），因为工作流是交互式的 interrupt 暂停/恢复；
+状态与凭证持久化在 `out/web_workflow.db` / `out/web_tokens.db`。
+
 ---
 
 ## 四、两个 P0 闭环（文档 §14）
@@ -193,6 +214,9 @@ teaching-agent/
 ├── m08_eval.py                # §12
 ├── m09_router.py              # §9
 ├── m10_reliability.py         # §10
+├── webui/                     # 可视化页面（FastAPI + 原生前端）
+│   ├── server.py              # 交互式工作流 + RAG + 评测/安全接口
+│   └── static/                # index.html / app.js / style.css
 └── out/                       # 运行产物（checkpoint db / 评测报告）
 ```
 

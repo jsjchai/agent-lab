@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import operator
 import sqlite3
 import sys
 import uuid
@@ -62,6 +63,7 @@ class FlowState(TypedDict, total=False):
     status: str
     activity_id: str
     confirm_token: str
+    trace: Annotated[list, operator.add]  # 节点执行轨迹，供可视化动画
 
 
 def build_graph(ctx: SecurityContext, llm: LLM, reg: m04.ToolRegistry,
@@ -137,10 +139,16 @@ def build_graph(ctx: SecurityContext, llm: LLM, reg: m04.ToolRegistry,
         return {"status": "failed"}
 
     g = StateGraph(FlowState)
+    def traced(name: str, fn):
+        def inner(state: FlowState) -> dict:
+            out = fn(state)
+            return {**out, "trace": [{"node": name}]}
+        return inner
+
     for name, fn in [("extract", extract), ("clarify", clarify), ("gather", gather),
                      ("draft", draft), ("validate", validate), ("fix", fix),
                      ("confirm", confirm), ("create", create), ("fail", fail)]:
-        g.add_node(name, fn)
+        g.add_node(name, traced(name, fn))
 
     g.add_edge(START, "extract")
     g.add_conditional_edges("extract", route_extract, {"gather": "gather", "clarify": "clarify", "fail": "fail"})

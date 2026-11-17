@@ -120,9 +120,10 @@ def mock_extract_intent(text: str) -> dict[str, Any]:
             slots["grade"] = g
             break
 
-    m = _DATE_RE.search(text)
-    if m:
-        slots["date_text"] = m.group(1)
+    # 取「最新」匹配：澄清/修正追加在文本末尾，应覆盖先前的值
+    dates = list(_DATE_RE.finditer(text))
+    if dates:
+        slots["date_text"] = dates[-1].group(1)
     elif "下周" in text or "本周" in text:
         slots["time_hint"] = "下周" if "下周" in text else "本周"
 
@@ -135,9 +136,9 @@ def mock_extract_intent(text: str) -> dict[str, Any]:
         raw = cnt.group(1)
         slots["speaker_count"] = _CN_NUM.get(raw, int(raw) if raw.isdigit() else 1)
 
-    names = re.search(r"主讲人[：:]?\s*([^，。,]+)", text)
-    if names:
-        picked = [n.strip() for n in re.split(r"[、和,]", names.group(1)) if n.strip()]
+    name_matches = list(re.finditer(r"主讲人[：:]?\s*([^，。,]+)", text))
+    if name_matches:
+        picked = [n.strip() for n in re.split(r"[、和,]", name_matches[-1].group(1)) if n.strip()]
         # 过滤掉"两位主讲人"这类数量短语误匹配
         picked = [n for n in picked if not re.match(r"^[一两二三四五1-5]位", n) and len(n) >= 2]
         if picked:

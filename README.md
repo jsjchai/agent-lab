@@ -137,6 +137,7 @@ uv pip install -r projects/teaching-agent/requirements.txt
 cd projects/teaching-agent
 ../../.venv/bin/python run_all.py          # 10/10 通过，约 1 秒
 ../../.venv/bin/python m05_workflow.py     # 活动创建全流程（含重启恢复）
+../../.venv/bin/python webui/server.py     # 可视化页面 http://127.0.0.1:7871
 ```
 详见 [projects/teaching-agent/README.md](projects/teaching-agent/README.md)（含 Java→Python 替代对照表）。
 

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teaching Agent · 可视化</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 全局错误红条 -->
+  <div id="error-banner" class="error-banner" hidden>
+    <span class="error-icon">!</span>
+    <span id="error-text"></span>
+    <button id="error-close" class="error-close" type="button" aria-label="关闭错误提示">×</button>
+  </div>
+
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span></div>
+        <div class="brand-text">
+          <h1>Teaching Agent · 可视化</h1>
+          <p class="subtitle">对话式创建活动 / 知识问答 / 评测与安全</p>
+        </div>
+      </div>
+      <div id="llm-info" class="llm-badge">正在连接后端…</div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Tab 导航 -->
+    <nav class="tabs" role="tablist" aria-label="功能切换">
+      <button class="tab active" type="button" role="tab" data-tab="workflow" aria-selected="true">活动创建工作流</button>
+      <button class="tab" type="button" role="tab" data-tab="rag" aria-selected="false">知识问答</button>
+      <button class="tab" type="button" role="tab" data-tab="eval" aria-selected="false">评测与安全</button>
+    </nav>
+
+    <!-- ============ Tab 1：活动创建工作流 ============ -->
+    <section id="tab-workflow" class="tab-panel active" role="tabpanel">
+
+      <div class="card controls">
+        <div class="control-row">
+          <label class="field">
+            <span class="field-label">用户</span>
+            <select id="wf-user" class="input select">
+              <option value="u1">u1</option>
+              <option value="u2">u2</option>
+              <option value="u3">u3</option>
+            </select>
+          </label>
+          <label class="field field-grow">
+            <span class="field-label">活动需求（自然语言）</span>
+            <input id="wf-text" class="input" type="text"
+              value="帮我创建下周的数学教研活动，面向三年级教师，安排两位主讲人"
+              placeholder="例如：帮我创建下周的数学教研活动…">
+          </label>
+          <div class="field field-btns">
+            <span class="field-label">&nbsp;</span>
+            <div class="btn-row">
+              <button id="btn-start" class="btn btn-primary" type="button">开始创建</button>
+              <button id="btn-reset" class="btn btn-ghost" type="button">重置</button>
+            </div>
+          </div>
+        </div>
+        <p class="hint">提示：这是一个「人在回路」工作流——Agent 会在缺信息时向你提问，在创建前请你确认草稿。请亲手走完每一步。</p>
+      </div>
+
+      <div class="wf-grid">
+        <div class="wf-main">
+
+          <div class="card">
+            <h2 class="card-title">流程图 <span class="card-sub">节点执行轨迹（trace）</span></h2>
+            <div id="flow-graph" class="flow-wrap"></div>
+            <div class="legend">
+              <span class="legend-item"><i class="dot dot-pending"></i>待执行</span>
+              <span class="legend-item"><i class="dot dot-done"></i>已完成</span>
+              <span class="legend-item"><i class="dot dot-current"></i>当前中断节点</span>
+              <span class="legend-item">↺ 表示回环（澄清 / 修正）</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 class="card-title">中断交互区 <span class="card-sub">澄清 / 确认 / 校验修正</span></h2>
+            <div id="interrupt-area">
+              <p class="placeholder">尚未开始。点击上方「开始创建」后，这里会出现需要你回答的澄清问题或待确认的活动草稿。</p>
+            </div>
+          </div>
+
+        </div>
+
+        <aside class="wf-side">
+          <div class="card">
+            <h2 class="card-title">任务状态</h2>
+            <div id="wf-status">
+              <p class="placeholder">运行后这里会显示已抽取的槽位（slots）、缺项、澄清轮次等信息。</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 class="card-title">Checkpoint 恢复</h2>
+            <p class="kv"><span class="kv-key">任务ID</span><code id="task-id" class="mono">—</code></p>
+            <div class="restore-row">
+              <input id="restore-id" class="input" type="text" placeholder="输入任务ID，如 task-xxxx">
+              <button id="btn-restore" class="btn btn-ghost" type="button">按ID恢复</button>
+            </div>
+            <p class="hint">刷新页面后任务不丢失：后端有 Checkpoint，用任务ID即可恢复到中断处继续交互。</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ Tab 2：知识问答 ============ -->
+    <section id="tab-rag" class="tab-panel" role="tabpanel">
+      <div class="card controls">
+        <div class="control-row">
+          <label class="field">
+            <span class="field-label">用户</span>
+            <select id="rag-user" class="input select">
+              <option value="u1">u1</option>
+              <option value="u2">u2</option>
+              <option value="u3">u3</option>
+            </select>
+          </label>
+          <label class="field field-grow">
+            <span class="field-label">问题</span>
+            <input id="rag-query" class="input" type="text" value="活动时长有什么规定？"
+              placeholder="例如：活动时长有什么规定？">
+          </label>
+          <div class="field field-btns">
+            <span class="field-label">&nbsp;</span>
+            <button id="btn-ask" class="btn btn-primary" type="button">提问</button>
+          </div>
+        </div>
+        <p class="hint acl-hint">ACL 体验：<b>u1 / u2 属租户 t1，u3 属租户 t2</b>。切换用户再提问可感受权限隔离——例如用 u1 问「文档入库的流程」检索不到 t2 的文档；无依据时 Agent 会拒答。</p>
+      </div>
+
+      <div id="rag-result">
+        <div class="card">
+          <p class="placeholder">尚未提问。输入问题并点击「提问」，这里会显示回答、引用来源与检索到的知识片段。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Tab 3：评测与安全 ============ -->
+    <section id="tab-eval" class="tab-panel" role="tabpanel">
+      <div class="eval-grid">
+        <div class="card">
+          <h2 class="card-title">评测指标 <span class="card-sub">实测 vs 门槛</span></h2>
+          <div id="eval-area"><p class="placeholder">加载中…</p></div>
+          <details id="eval-details" class="details" hidden>
+            <summary id="eval-details-summary">用例明细</summary>
+            <div id="eval-details-body"></div>
+          </details>
+        </div>
+        <div class="card">
+          <h2 class="card-title">安全测试 <span class="card-sub">对抗用例</span></h2>
+          <div id="security-area"><p class="placeholder">加载中…</p></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">本页面内容为模拟数据，仅用于教学演示。</div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
