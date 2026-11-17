@@ -14,15 +14,31 @@
 | 08 | [eval-observability](08-eval-observability/) | 怎么证明这一版比上一版强？ | [code](../code/08-eval-observability/) · [Teaching m08](../projects/teaching-agent/) | ◐ |
 | 09 | [safety-guardrails](09-safety-guardrails/) | 提示注入、越权操作怎么防？ | [code](../code/09-safety-guardrails/) · [Teaching m07](../projects/teaching-agent/) | ◐ |
 | 10 | [production](10-production/) | 怎么把延迟和成本压下来并稳定上线？ | [code](../code/10-production/) · [Teaching m09/m10](../projects/teaching-agent/) | ◐ |
+| 11 | [harness-engineering](11-harness-engineering/) | Harness 如何把模型变成可靠做事系统？循环/上下文/工具/安全/恢复 | [code](../code/11-harness-experiments/) · [11章教材](11-harness-engineering/README.md) | ☑ |
 | — | [papers](papers/) | 论文原文索引与阅读笔记 | — | — |
 | — | [journal](journal/) | 学习日志：今天学了什么、卡在哪 | — | — |
+
+## V2.0 知识体系扩展
+
+按 [V2.0 架构方案](audit/v2.0-architecture-plan.md)，新增 11-15 五个主题，**质量优先于数量**，串行门禁推进：
+
+| 编号 | 主题 | 状态 |
+|---|---|---|
+| 11 | [harness-engineering](11-harness-engineering/README.md) | ☑ **完整建成（质量试点标杆）**：11 章教材 + 7 个可运行实验 |
+| 12 | coding-agent | 🚧 规划（待 11 验收后推进） |
+| 13 | ai-software-engineering | 🚧 规划 |
+| 14 | agent-runtime | 🚧 规划 |
+| 15 | agentops | 🚧 规划 |
+
+> **11-harness-engineering 是文档质量标杆**：每章按「问题背景→核心概念→工作原理→Mermaid→可运行代码讲解→深入分析→工程实践→总结→参考」组织，
+> 基于真实 DeepSeek Harness 架构文档，配套离线可运行实验。其他主题以此为质量基准。
 
 ## 怎么用这个目录
 
 > 📌 **Teaching 场景配套实现**：[projects/teaching-agent/](../projects/teaching-agent/README.md)
 > 把《Teaching Agent 技术知识体系与学习路线 v1.0》的 10 大模块实现为可离线运行的 Python 示例
 > （Spring AI → openai SDK + LangGraph + FastAPI，Milvus → 本地索引，RocketMQ → SQLite Outbox）。
-> 各主题 README 的「Teaching 场景落地」章节链接到对应模块，`run_all.py` 一键验收 10/10。
+> 各主题 README 的「Teaching 场景落地」章节链接到对应模块，`run_all.py` 一键验收 11/11。
 
 - 每个主题目录的 `README.md` 是门面：目标、关键问题、资料清单、产出清单。先读它再动手。
 - 笔记命名 `YYYY-MM-DD-主题.md`（例：`2026-11-10-react-循环.md`），一篇只讲一件事。
