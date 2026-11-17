@@ -2,6 +2,24 @@
 
 > 原则：每个阶段都以「能跑起来的东西」收尾，不以「看完」收尾。
 
+## 当前进度（teaching-agent 已落地）
+
+[projects/teaching-agent/](../projects/teaching-agent/README.md) 已把源文档 10 大模块实现为可运行示例
+（m01–m11，`run_all.py` 验收 11/11），覆盖阶段二、三的大部分验收点：
+
+| 阶段 | 验收点 | 落地示例 | 状态 |
+|---|---|---|---|
+| 二 | 本地知识库工具 + 检索 bad case 分析 | m06 RAG（ACL/引用/拒答） | ☑ |
+| 二 | 框架重写 + 差异对比 | m05 LangGraph + 医疗 LangGraph/CrewAI 对照 | ☑ |
+| 三 | 自己的评测集（≥20 条） | m08 Golden Set 30 条 + 6 项门禁 | ☑ |
+| 三 | 注入/越权测试 | m07 12 项安全测试（拦截率 100%） | ☑ |
+| 三 | 延迟/成本基线 + 模型对比 | m09 路由 + m11 7B/8B 对比 | ☑ |
+| 三 | 异步任务可靠性 | m10 Outbox/幂等/租约/重试 | ☑ |
+| 一 | 无框架手写 ReAct / function calling | —（示例用框架，待补纯手写版） | ☐ |
+| 三 | tracing 回放（Langfuse 等） | —（待接入） | ☐ |
+
+> 知识点笔记见各主题 README 的「Teaching 场景落地」章节；方法论沉淀见 [journal/](journal/)。
+
 ## 阶段一 · 打地基（约 1~2 周）
 
 | # | 内容 | 目录 | 验收标准 |

@@ -4,32 +4,24 @@ Agent 学习与实践仓库：**资料在 `docs/`，小步实验代码在 `code/
 
 默认面向 LLM Agent（工具调用 / 检索 / 多智能体 / 评测）。如果以后要加强化学习 Agent，也放进对应的 `01-10` 主题或 `projects/`，结构不用改。
 
-## 🚀 快速体验
+## 🗺️ 内容地图（先看这里）
 
-```bash
-# 克隆仓库
-git clone https://github.com/jsjchai/agent-lab.git
-cd agent-lab
+实际代码集中在三块，`code/01-10` 各目录是**主题导航页**（索引到下面的真实示例，不重复存代码）：
 
-# 创建虚拟环境并安装依赖
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r code/07-frameworks/medical-education/requirements.txt
+| 内容块 | 位置 | 是什么 |
+|---|---|---|
+| **Teaching Agent 知识体系** | [projects/teaching-agent/](projects/teaching-agent/README.md) | 源文档 10 大模块的 Python 落地（m01–m11）+ 可交互可视化 + 评测门禁 + 模型对比，`run_all.py` 一键验收 11/11 |
+| **框架对照实现** | [code/07-frameworks/](code/07-frameworks/README.md) | 医疗教学 LangGraph vs CrewAI（含可视化/小模型适配）+ DeepSeek Harness 插件三式 |
+| **主题笔记** | [docs/](docs/README.md) | 01–10 知识点 + 路线图 + 论文索引 + 学习日志 |
 
-# 运行医疗教学示例（离线 mock 模式，无需 API key）
-cd code/07-frameworks/medical-education
-AGENT_LLM=mock ../../../.venv/bin/python langgraph_case_agent.py
-AGENT_LLM=mock ../../../.venv/bin/python crewai_teaching_activity.py
-
-# 启动可视化界面
-../../../.venv/bin/python webui/server.py
-# 打开 http://127.0.0.1:7861
-```
+**怎么开始**：想系统学 → 读 [docs/00-roadmap.md](docs/00-roadmap.md)；想直接跑 → 下面「快速开始」；
+想按主题找代码 → 进 `code/0X/README.md` 导航页。
 
 ## ✅ 已完成内容
 
 | 模块 | 说明 | 状态 |
 |------|------|------|
-| [Teaching Agent 知识体系](projects/teaching-agent/) | 源文档 10 大模块的 Python 落地，离线可跑，run_all 验收 10/10 | ☑ 完成 |
+| [Teaching Agent 知识体系](projects/teaching-agent/) | 源文档 10 大模块的 Python 落地（m01–m11），离线可跑，run_all 验收 11/11 | ☑ 完成 |
 | [医疗教学 Agent](code/07-frameworks/medical-education/) | LangGraph vs CrewAI 对照实现，含可视化界面 | ☑ 完成 |
 | [Harness 扩展示例](code/07-frameworks/harness-examples/) | DeepSeek Harness 插件开发：Preset / Host Plugin / MCP Bundle | ☑ 完成 |
 | [小模型适配](code/07-frameworks/medical-education/README.md#小模型本地-7b8b怎么跑) | 7B/8B 本地模型适配、硬约束、JSON 校验重试 | ☑ 完成 |
@@ -40,13 +32,13 @@ AGENT_LLM=mock ../../../.venv/bin/python crewai_teaching_activity.py
 ```
 agent-lab/
 ├── docs/            # 学习资料：路线图、主题笔记、论文、日志
-├── code/            # 跟学代码：按主题编号，与 docs 一一对应
-│   └── 07-frameworks/
+├── code/            # 主题导航：01-10 各目录 README 索引到真实示例
+│   └── 07-frameworks/         # 实际代码块：框架对照实现
 │       ├── medical-education/   # LangGraph vs CrewAI + 可视化界面
 │       └── harness-examples/    # DeepSeek Harness 插件开发示例
 ├── notebooks/       # 探索性实验（不追求整洁）
 ├── projects/        # 端到端项目：有自己的 README、依赖、入口
-│   └── teaching-agent/        # Teaching 知识体系 10 模块 Python 落地（离线可跑）
+│   └── teaching-agent/        # Teaching 知识体系 m01-m11 + 可视化 + 评测（实际代码块）
 ├── evals/           # 评测集、评测脚本、trace 样本
 ├── data/            # 数据集 / PDF / 索引等大文件（不进 git）
 ├── resources/       # 外部资源索引：课程、博客、文档、社区
@@ -131,11 +123,11 @@ cp .env.example .env
 
 ### 运行示例
 
-**Teaching Agent 知识体系（离线 mock，一键验收 10 模块）**
+**Teaching Agent 知识体系（离线 mock，一键验收 11 模块）**
 ```bash
 uv pip install -r projects/teaching-agent/requirements.txt
 cd projects/teaching-agent
-../../.venv/bin/python run_all.py          # 10/10 通过，约 1 秒
+../../.venv/bin/python run_all.py          # 11/11 通过，约 1 秒
 ../../.venv/bin/python m05_workflow.py     # 活动创建全流程（含重启恢复）
 ../../.venv/bin/python webui/server.py     # 可视化页面 http://127.0.0.1:7871
 ```
