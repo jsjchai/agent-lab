@@ -522,6 +522,9 @@ async function loadEvalAndSecurity() {
   api("/api/security").then(renderSecurity).catch(function (e) {
     $("#security-area").innerHTML = '<p class="error-text">安全测试加载失败：' + esc(e.message) + "</p>";
   });
+  api("/api/bench").then(renderBench).catch(function (e) {
+    $("#bench-area").innerHTML = '<p class="error-text">模型对比加载失败：' + esc(e.message) + "</p>";
+  });
 }
 
 function pct(v) { return (Number(v) * 100).toFixed(1) + "%"; }
@@ -568,6 +571,33 @@ function renderSecurity(data) {
       '<span class="sec-mark">' + (t.passed ? "✓" : "✗") + "</span>" + esc(t.name) + "</li>";
   }).join("") + "</ul>";
   $("#security-area").innerHTML = html;
+}
+
+function renderBench(data) {
+  const area = $("#bench-area");
+  if (!data.available) {
+    area.innerHTML = '<p class="placeholder">' + esc(data.hint || "暂无对比数据") + "</p>";
+    return;
+  }
+  const rows = (data.models || []).map(function (m) {
+    if (m.error || !m.intent) {
+      return "<tr><th>" + esc(m.model) + '</th><td colspan="6" class="fail">运行失败：' + esc(m.error || "") + "</td></tr>";
+    }
+    const i = m.intent, r = m.rag || {};
+    const isMock = m.model === "mock";
+    return "<tr><th>" + esc(m.model) + (isMock ? ' <span class="tag-base">基线</span>' : "") + "</th>" +
+      "<td>" + pct(i.accuracy) + "</td>" +
+      "<td>" + i.drift_cases + " / " + i.cases + "</td>" +
+      "<td>" + i.json_retries + "</td>" +
+      "<td>" + i.avg_latency_s + "s</td>" +
+      "<td>" + pct(r.citation_accuracy) + "</td>" +
+      "<td>" + pct(r.refusal_accuracy) + "</td></tr>";
+  }).join("");
+  area.innerHTML =
+    '<table class="table"><thead><tr><th>模型</th><th>意图准确率</th><th>槽位漂移</th><th>JSON重试</th>' +
+    "<th>意图延迟</th><th>RAG引用</th><th>RAG拒答</th></tr></thead><tbody>" + rows + "</tbody></table>" +
+    '<p class="bench-note">槽位漂移 = 原始输出需归一化纠正的用例数（小模型格式漂移指标）；mock 为确定性基线（0 漂移）。' +
+    "生成时间：" + esc(data.generated_at || "") + "</p>";
 }
 
 /* ------------------------------------------------------------ 启动 */

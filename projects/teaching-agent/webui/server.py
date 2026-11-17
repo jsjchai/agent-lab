@@ -192,6 +192,17 @@ def security():
     return {"tests": [{"name": name, "passed": fn()} for name, fn in m07.TESTS]}
 
 
+@app.get("/api/bench")
+def bench():
+    path = OUT / "model_bench.json"
+    if not path.exists():
+        return {"available": False, "hint": "运行 python m11_model_bench.py 生成模型对比数据"}
+    import json
+
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {"available": True, **data}
+
+
 # 静态资源最后挂载，避免截胡 /api/*
 app.mount("/", StaticFiles(directory=STATIC, html=True, check_dir=False), name="static")
 

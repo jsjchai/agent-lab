@@ -26,6 +26,7 @@ MODULES = [
     ("m08_eval", "§12 Golden Set 评测门禁"),
     ("m09_router", "§9 模型路由 / 合规回退"),
     ("m10_reliability", "§10 Outbox / 幂等 / 租约 / 重试"),
+    ("m11_model_bench", "§9/§12 模型横向对比（mock 基线）"),
 ]
 
 
