@@ -203,23 +203,32 @@ def mock_embed(texts: list[str]) -> list[list[float]]:
 class LLM:
     """脚本里直接用：LLM().chat(...) / chat_json(...) / stream(...) / embed(...)。"""
 
-    def __init__(self, mode: str | None = None) -> None:
+    def __init__(self, mode: str | None = None, model: str | None = None,
+                 base_url: str | None = None, embed_model: str | None = None,
+                 api_key: str | None = None) -> None:
         self.mode = (mode or current_mode()).lower()
         if self.mode not in {"mock", "openai"}:
             raise ValueError(f"未知 TEACHING_LLM={self.mode!r}，只支持 mock / openai")
+        # 实例级覆盖：Web 端可按请求选模型；不传则回退到环境变量
+        self.model = model or model_name()
+        self.base_url = base_url or os.getenv("OPENAI_BASE_URL") or None
+        self.embed_model = embed_model or embed_model_name()
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self._client = None
         self.stats = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "errors": 0}
+
+    def label(self) -> str:
+        return "mock" if self.mode == "mock" else self.model
 
     def _openai_client(self):
         if self._client is None:
             from openai import OpenAI
 
-            api_key = os.getenv("OPENAI_API_KEY")
-            if not api_key:
-                raise RuntimeError("TEACHING_LLM=openai 但未设置 OPENAI_API_KEY；离线请 export TEACHING_LLM=mock")
+            if not self.api_key:
+                raise RuntimeError("openai 模式但未设置 OPENAI_API_KEY；离线请用 mock")
             self._client = OpenAI(
-                api_key=api_key,
-                base_url=os.getenv("OPENAI_BASE_URL") or None,
+                api_key=self.api_key,
+                base_url=self.base_url,
                 timeout=float(os.getenv("TEACHING_TIMEOUT", "120")),
                 max_retries=int(os.getenv("TEACHING_MAX_RETRIES", "2")),
             )
@@ -230,7 +239,7 @@ class LLM:
         self.stats["calls"] += 1
         if self.mode == "openai":
             resp = self._openai_client().chat.completions.create(
-                model=model_name(), temperature=temperature, max_tokens=max_tokens, messages=messages
+                model=self.model, temperature=temperature, max_tokens=max_tokens, messages=messages
             )
             usage = getattr(resp, "usage", None)
             if usage:
@@ -282,7 +291,7 @@ class LLM:
     def stream(self, messages: list[dict], temperature: float = 0.0) -> Iterator[str]:
         if self.mode == "openai":
             stream = self._openai_client().chat.completions.create(
-                model=model_name(), temperature=temperature, messages=messages, stream=True
+                model=self.model, temperature=temperature, messages=messages, stream=True
             )
             for chunk in stream:
                 delta = chunk.choices[0].delta.content if chunk.choices else None
@@ -297,7 +306,7 @@ class LLM:
     # -- 向量（对应 Spring AI EmbeddingModel）
     def embed(self, texts: list[str]) -> list[list[float]]:
         if self.mode == "openai":
-            resp = self._openai_client().embeddings.create(model=embed_model_name(), input=texts)
+            resp = self._openai_client().embeddings.create(model=self.embed_model, input=texts)
             return [d.embedding for d in resp.data]
         return mock_embed(texts)
 

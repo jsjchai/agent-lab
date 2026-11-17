@@ -159,7 +159,9 @@ class KnowledgeIndex:
         bm_allowed = [bm_scores[i] for i in allowed]
 
         # 相关性门槛：无内容关键词重叠且向量相似度过低 => 视为无证据（支撑「无依据拒答」）
-        relevant = [j for j in range(len(allowed)) if bm_allowed[j] > 0.0 or vec_scores[j] > 0.25]
+        # mock 哈希向量相似度整体偏低用 0.25；真实语义模型(bge-m3)无关文档也有 ~0.3-0.4，用 0.5
+        vec_thr = 0.25 if self.dim <= 256 else 0.5
+        relevant = [j for j in range(len(allowed)) if bm_allowed[j] > 0.0 or vec_scores[j] > vec_thr]
         if not relevant:
             return []
         allowed = [allowed[j] for j in relevant]
@@ -185,8 +187,9 @@ class KnowledgeIndex:
             return {"answer": "无法确认：知识库中没有找到相关依据。", "citations": [], "retrieved": []}
 
         blocks = "\n".join(f"【片段 {c['chunk_id']} | {c['doc_title']}·{c['section']}】\n{c['text']}" for c in evidences)
+        example_id = evidences[0]["chunk_id"]
         messages = [
-            {"role": "system", "content": "你是教学知识问答助手。只能依据给定证据片段回答，引用格式为 chunk_id。无依据则拒答。只输出 JSON：{answer, citations}。"},
+            {"role": "system", "content": f"你是教学知识问答助手。只能依据给定证据片段回答，无依据则拒答。只输出 JSON：{{\"answer\":\"...\",\"citations\":[\"{example_id}\"]}}。citations 必须是证据中出现的 chunk_id 原样（如 {example_id}），不要加前缀。"},
             {"role": "user", "content": f"问题：{query}\n\n证据：\n{blocks}"},
         ]
         valid_ids = {c["chunk_id"] for c in evidences}
@@ -194,8 +197,14 @@ class KnowledgeIndex:
         def validate(data: dict) -> str | None:
             if "answer" not in data or "citations" not in data:
                 return "缺少 answer/citations"
-            if not set(data["citations"]).issubset(valid_ids):
-                return "引用了未检索到的片段"
+            # 归一化引用：小模型可能输出 "chunk_id:doc-rules#1" 等漂移格式，提取规范 id
+            raw_cites = data["citations"] if isinstance(data["citations"], list) else [data["citations"]]
+            cleaned = []
+            for c in raw_cites:
+                m = re.search(r"doc-[\w-]+#\d+", str(c))
+                if m and m.group(0) in valid_ids:
+                    cleaned.append(m.group(0))
+            data["citations"] = cleaned
             return None
 
         result = self.llm.chat_json(messages, validate=validate)

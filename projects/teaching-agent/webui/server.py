@@ -40,6 +40,17 @@ STATIC = HERE / "static"
 OUT = BASE / "out"
 OUT.mkdir(exist_ok=True)
 
+# 模型选择：mock 离线；其余走本地 Ollama（OpenAI 兼容接口）
+MODELS = ["mock", "qwen2.5:7b", "qwen3:8b"]
+OLLAMA_BASE = "http://localhost:11434/v1"
+
+
+def _llm(model: str) -> LLM:
+    if model == "mock":
+        return LLM("mock")
+    return LLM("openai", model=model, base_url=OLLAMA_BASE, api_key="ollama", embed_model="bge-m3")
+
+
 # 持久化：checkpoint + 一次性凭证（跨请求/重启共享）
 _conn = sqlite3.connect(str(OUT / "web_workflow.db"), check_same_thread=False)
 _SAVER = SqliteSaver(_conn)
@@ -49,9 +60,9 @@ _USERS = ["u1", "u2", "u3"]
 app = FastAPI(title="Teaching Agent 可视化", docs_url=None, redoc_url=None)
 
 
-def _graph(ctx):
+def _graph(ctx, llm):
     reg = m04.build_registry(AuditLog())
-    return m05.build_graph(ctx, LLM(), reg, _TOKENS, _SAVER)
+    return m05.build_graph(ctx, llm, reg, _TOKENS, _SAVER)
 
 
 def _snapshot(graph, config) -> dict:
@@ -89,7 +100,7 @@ def index():
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "users": _USERS, "llm": describe(), "base": BASE.name}
+    return {"ok": True, "users": _USERS, "models": MODELS, "default_model": "mock", "llm": describe(), "base": BASE.name}
 
 
 @app.post("/api/workflow/start")
@@ -102,7 +113,7 @@ def workflow_start(body: dict):
         ctx = authenticate(user)
     except AuthError as exc:
         return JSONResponse({"error": str(exc)}, status_code=403)
-    graph = _graph(ctx)
+    graph = _graph(ctx, _llm(body.get("model", "mock")))
     task_id = "task-" + uuid.uuid4().hex[:8]
     config = {"configurable": {"thread_id": task_id}}
     graph.invoke({"task_id": task_id, "user_text": text, "clarify_rounds": 0, "trace": []}, config)
@@ -118,7 +129,7 @@ def workflow_resume(body: dict):
         ctx = authenticate(user)
     except AuthError as exc:
         return JSONResponse({"error": str(exc)}, status_code=403)
-    graph = _graph(ctx)
+    graph = _graph(ctx, _llm(body.get("model", "mock")))
     config = {"configurable": {"thread_id": task_id}}
     pre = graph.get_state(config)
     if not pre.tasks or not any(t.interrupts for t in pre.tasks):
@@ -131,12 +142,12 @@ def workflow_resume(body: dict):
 
 
 @app.get("/api/workflow/status")
-def workflow_status(task_id: str, user: str = "u1"):
+def workflow_status(task_id: str, user: str = "u1", model: str = "mock"):
     try:
         ctx = authenticate(user)
     except AuthError as exc:
         return JSONResponse({"error": str(exc)}, status_code=403)
-    graph = _graph(ctx)
+    graph = _graph(ctx, _llm(model))
     config = {"configurable": {"thread_id": task_id}}
     if not graph.get_state(config).values:
         return JSONResponse({"error": "任务不存在"}, status_code=404)
@@ -153,7 +164,7 @@ def rag(body: dict):
         ctx = authenticate(user)
     except AuthError as exc:
         return JSONResponse({"error": str(exc)}, status_code=403)
-    index = m06.KnowledgeIndex(LLM())
+    index = m06.KnowledgeIndex(_llm(body.get("model", "mock")))
     index.build()
     retrieved = index.retrieve(ctx, query, k=3)
     ans = index.answer(ctx, query)

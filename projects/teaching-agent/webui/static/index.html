@@ -25,7 +25,14 @@
           <p class="subtitle">对话式创建活动 / 知识问答 / 评测与安全</p>
         </div>
       </div>
-      <div id="llm-info" class="llm-badge">正在连接后端…</div>
+      <div class="topbar-right">
+        <label class="model-picker">模型
+          <select id="model-select" class="input select select-sm">
+            <option value="mock">mock（离线）</option>
+          </select>
+        </label>
+        <div id="llm-info" class="llm-badge">正在连接后端…</div>
+      </div>
     </div>
   </header>
 

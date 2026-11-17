@@ -73,6 +73,11 @@ document.querySelectorAll(".tab").forEach(function (btn) {
 
 /* ------------------------------------------------------------ 初始化 */
 
+function currentModel() {
+  const el = $("#model-select");
+  return el ? el.value : "mock";
+}
+
 async function init() {
   try {
     const h = await api("/api/health");
@@ -85,6 +90,18 @@ async function init() {
         return '<option value="' + esc(u) + '">' + esc(u) + "</option>";
       }).join("");
     });
+    const models = Array.isArray(h.models) && h.models.length ? h.models : ["mock"];
+    $("#model-select").innerHTML = models.map(function (m) {
+      const label = m === "mock" ? "mock（离线）" : m + "（Ollama）";
+      return '<option value="' + esc(m) + '">' + esc(label) + "</option>";
+    }).join("");
+    $("#model-select").value = h.default_model || "mock";
+    const syncBadge = function () {
+      const m = $("#model-select").value;
+      $("#llm-info").textContent = m === "mock" ? "LLM 后端：mock（离线，无需 API key）" : "LLM 后端：" + m + "（Ollama 本地）";
+    };
+    $("#model-select").addEventListener("change", syncBadge);
+    syncBadge();
   } catch (e) {
     $("#llm-info").textContent = "后端连接失败";
     $("#llm-info").classList.add("bad");
@@ -355,7 +372,7 @@ async function doStart() {
   setBusy($("#btn-start"), true);
   $("#btn-reset").disabled = true;
   try {
-    const data = await postJSON("/api/workflow/start", { user: $("#wf-user").value, text: text });
+    const data = await postJSON("/api/workflow/start", { user: $("#wf-user").value, text: text, model: currentModel() });
     renderWorkflow(data);
   } catch (e) {
     showError(e.message);
@@ -373,7 +390,7 @@ async function doResume(value, btn) {
   setBusy(btn, true);
   try {
     const data = await postJSON("/api/workflow/resume", {
-      task_id: wfData.task_id, user: $("#wf-user").value, value: value,
+      task_id: wfData.task_id, user: $("#wf-user").value, value: value, model: currentModel(),
     });
     renderWorkflow(data);
   } catch (e) {
@@ -394,7 +411,7 @@ async function doRestore() {
   setBusy($("#btn-restore"), true);
   try {
     const data = await api("/api/workflow/status?task_id=" + encodeURIComponent(id) +
-      "&user=" + encodeURIComponent($("#wf-user").value));
+      "&user=" + encodeURIComponent($("#wf-user").value) + "&model=" + encodeURIComponent(currentModel()));
     renderWorkflow(data);
   } catch (e) {
     showError(e.message);
@@ -437,7 +454,7 @@ async function doAsk() {
   ragBusy = true;
   setBusy($("#btn-ask"), true);
   try {
-    const data = await postJSON("/api/rag", { user: $("#rag-user").value, query: query });
+    const data = await postJSON("/api/rag", { user: $("#rag-user").value, query: query, model: currentModel() });
     renderRag(data);
   } catch (e) {
     showError(e.message);

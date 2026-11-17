@@ -111,6 +111,12 @@ code, .mono { font-family: var(--font-mono); }
   padding-bottom: 10px;
 }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.topbar-right { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+.model-picker {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--muted, #64748b); white-space: nowrap;
+}
+.select-sm { min-width: 150px; padding: 6px 8px; font-size: 13px; }
 .brand-mark {
   position: relative;
   flex: 0 0 auto;
