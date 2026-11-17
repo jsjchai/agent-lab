@@ -14,3 +14,18 @@
 - [ ] 30 行以内的手写 ReAct 循环（无框架）→ `code/01-foundations/`
 - [ ] 一页笔记：什么任务用 Workflow，什么任务才值得上 Agent
 - [ ] 一次失败复盘：无限循环 / 工具乱调 / 提前停止，各记一个例子
+
+## Teaching 场景落地（源文档 §3 LLM 基础）
+
+配套可运行示例：[projects/teaching-agent/m01](../../projects/teaching-agent/m01_structured_output.py)、[m05](../../projects/teaching-agent/m05_workflow.py)
+
+必须掌握的概念：
+- **Token / Context Window**：文本切分与计量，决定费用和上下文上限。
+- **Temperature / Top-p**：控制生成随机性；结构化抽取用低温（0）。
+- **Embedding**：文本→向量，用于语义检索（见 04）。
+- **Tool Calling**：模型提出调用请求，由应用执行并回传结果（见 03）。
+- **Structured Output**：按 Schema/DTO 约束输出，**未经校验不得进入业务流程**。
+- **多轮对话**：历史消息、摘要、窗口裁剪、状态管理。
+
+验收：输出可稳定解析；字段缺失/类型错误/非法枚举能被程序拦截。
+m01 用 pydantic DTO 把这些拦截变成断言（替代 Spring AI + Bean Validation）。

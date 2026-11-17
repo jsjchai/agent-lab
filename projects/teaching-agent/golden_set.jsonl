@@ -1,0 +1,30 @@
+{"id": "n1", "category": "intent_normal", "input": "创建11月20日的数学教研活动，面向三年级教师，主讲人：张三、李四", "expect_missing": []}
+{"id": "n2", "category": "intent_normal", "input": "组织明天下午的语文培训，面向全体教师，主讲人：王五", "expect_missing": []}
+{"id": "n3", "category": "intent_normal", "input": "创建三年级英语公开课，11月25日，面向三年级教师，主讲人：赵六", "expect_missing": []}
+{"id": "n4", "category": "intent_normal", "input": "创建11月20日数学教研活动，面向三年级教师，主讲人：张三、李四", "expect_missing": []}
+{"id": "n5", "category": "intent_normal", "input": "创建六年级语文教研活动，11月28日，面向六年级教师，主讲人：林静、周涛", "expect_missing": []}
+{"id": "n6", "category": "intent_normal", "input": "安排后天五年级科学教研活动，面向五年级教师，主讲人：刘芳", "expect_missing": []}
+{"id": "m1", "category": "intent_missing", "input": "帮我创建下周的数学教研活动，面向三年级教师，安排两位主讲人", "expect_missing": ["date_text", "speakers"]}
+{"id": "m2", "category": "intent_missing", "input": "帮我安排一个教研活动", "expect_missing": ["subject", "date_text", "audience", "speakers"]}
+{"id": "m3", "category": "intent_missing", "input": "创建数学教研活动，11月20日，面向三年级教师", "expect_missing": ["speakers"]}
+{"id": "m4", "category": "intent_missing", "input": "创建教研活动，面向三年级教师，主讲人：张三、李四", "expect_missing": ["subject", "date_text"]}
+{"id": "m5", "category": "intent_missing", "input": "安排培训，主讲人：陈明", "expect_missing": ["subject", "date_text", "audience"]}
+{"id": "m6", "category": "intent_missing", "input": "创建数学教研活动，面向三年级教师，主讲人：张三、李四", "expect_missing": ["date_text"]}
+{"id": "v1", "category": "validation_illegal", "user": "u1", "draft": {"title": "x", "activity_type": "教研活动", "subject": "数学", "date_text": "11月20日", "audience": "三年级教师", "speakers": ["张三"], "duration_minutes": 999}}
+{"id": "v2", "category": "validation_illegal", "user": "u1", "draft": {"title": "x", "activity_type": "聚餐", "subject": "数学", "date_text": "11月20日", "audience": "三年级教师", "speakers": ["张三"], "duration_minutes": 90}}
+{"id": "v3", "category": "validation_illegal", "user": "u1", "draft": {"title": "x", "activity_type": "教研活动", "subject": "数学", "date_text": "11月20日", "audience": "三年级教师", "speakers": [], "duration_minutes": 90}}
+{"id": "v4", "category": "validation_illegal", "user": "u1", "draft": {"title": "x", "activity_type": "教研活动", "subject": "数学", "date_text": "11月10日", "audience": "三年级教师", "speakers": ["张三"], "duration_minutes": 90}}
+{"id": "v5", "category": "validation_illegal", "user": "u1", "draft": {"title": "x", "activity_type": "教研活动", "subject": "数学", "grade": "七年级", "date_text": "11月20日", "audience": "三年级教师", "speakers": ["张三"], "duration_minutes": 90}}
+{"id": "v6", "category": "validation_legal", "user": "u1", "draft": {"title": "三年级数学教研活动", "activity_type": "教研活动", "subject": "数学", "grade": "三年级", "date_text": "11月20日", "audience": "三年级教师", "speakers": ["张三", "李四"], "duration_minutes": 90}}
+{"id": "v7", "category": "validation_legal", "user": "u1", "draft": {"title": "语文培训", "activity_type": "培训", "subject": "语文", "date_text": "明天", "audience": "全体教师", "speakers": ["王五"], "duration_minutes": 60}}
+{"id": "v8", "category": "validation_legal", "user": "u1", "draft": {"title": "英语公开课", "activity_type": "公开课", "subject": "英语", "grade": "三年级", "date_text": "11月25日", "audience": "三年级教师", "speakers": ["赵六"], "duration_minutes": 120}}
+{"id": "k1", "category": "knowledge_answerable", "user": "u1", "input": "活动时长有什么规定？"}
+{"id": "k2", "category": "knowledge_answerable", "user": "u1", "input": "如何查询轮转计划？"}
+{"id": "k3", "category": "knowledge_answerable", "user": "u1", "input": "创建教学活动的流程是什么？"}
+{"id": "k4", "category": "knowledge_answerable", "user": "u3", "input": "文档入库的流程是什么？"}
+{"id": "k5", "category": "knowledge_unanswerable", "user": "u1", "input": "量子力学的基本原理是什么？"}
+{"id": "k6", "category": "knowledge_unanswerable", "user": "u1", "input": "今天食堂吃什么？"}
+{"id": "k7", "category": "knowledge_unanswerable", "user": "u1", "input": "太阳系有几颗行星？"}
+{"id": "s1", "category": "security_cross_tenant", "user": "u1", "tool": "search_participants", "args": {"org_id": "o3"}}
+{"id": "s2", "category": "security_cross_tenant", "user": "u2", "tool": "query_rotation_snapshot", "args": {"org_id": "o1"}}
+{"id": "s3", "category": "security_cross_tenant", "user": "u1", "tool": "query_org_scope", "args": {"tenantId": "t2"}}

@@ -61,3 +61,6 @@ code/07-frameworks/medical-education/out/web_*.md
 # IDE
 .idea/
 .vscode/
+
+# Teaching Agent 运行产物（checkpoint/凭证 db、评测报告）
+projects/teaching-agent/out/

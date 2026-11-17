@@ -29,6 +29,7 @@ AGENT_LLM=mock ../../../.venv/bin/python crewai_teaching_activity.py
 
 | 模块 | 说明 | 状态 |
 |------|------|------|
+| [Teaching Agent 知识体系](projects/teaching-agent/) | 源文档 10 大模块的 Python 落地，离线可跑，run_all 验收 10/10 | ☑ 完成 |
 | [医疗教学 Agent](code/07-frameworks/medical-education/) | LangGraph vs CrewAI 对照实现，含可视化界面 | ☑ 完成 |
 | [Harness 扩展示例](code/07-frameworks/harness-examples/) | DeepSeek Harness 插件开发：Preset / Host Plugin / MCP Bundle | ☑ 完成 |
 | [小模型适配](code/07-frameworks/medical-education/README.md#小模型本地-7b8b怎么跑) | 7B/8B 本地模型适配、硬约束、JSON 校验重试 | ☑ 完成 |
@@ -45,6 +46,7 @@ agent-lab/
 │       └── harness-examples/    # DeepSeek Harness 插件开发示例
 ├── notebooks/       # 探索性实验（不追求整洁）
 ├── projects/        # 端到端项目：有自己的 README、依赖、入口
+│   └── teaching-agent/        # Teaching 知识体系 10 模块 Python 落地（离线可跑）
 ├── evals/           # 评测集、评测脚本、trace 样本
 ├── data/            # 数据集 / PDF / 索引等大文件（不进 git）
 ├── resources/       # 外部资源索引：课程、博客、文档、社区
@@ -128,6 +130,15 @@ cp .env.example .env
 依赖按主题需要再装，别提前堆一个巨大的 requirements。代码用到的库版本，记在对应主题目录的 `requirements.txt`。
 
 ### 运行示例
+
+**Teaching Agent 知识体系（离线 mock，一键验收 10 模块）**
+```bash
+uv pip install -r projects/teaching-agent/requirements.txt
+cd projects/teaching-agent
+../../.venv/bin/python run_all.py          # 10/10 通过，约 1 秒
+../../.venv/bin/python m05_workflow.py     # 活动创建全流程（含重启恢复）
+```
+详见 [projects/teaching-agent/README.md](projects/teaching-agent/README.md)（含 Java→Python 替代对照表）。
 
 **医疗教学 Agent（离线 mock）**
 ```bash

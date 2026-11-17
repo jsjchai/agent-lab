@@ -4,20 +4,25 @@
 
 | 编号 | 主题 | 要能回答的问题 | 代码 | 状态 |
 |---|---|---|---|---|
-| 01 | [foundations](01-foundations/) | Agent 和「带 if/else 的 Workflow」差在哪？ReAct 每一步在干什么？ | [code](../code/01-foundations/) | ☐ |
-| 02 | [prompt-context](02-prompt-context/) | 同一模型，为什么上下文组织方式能决定成败？ | [code](../code/02-prompt-context/) | ☐ |
-| 03 | [tool-use](03-tool-use/) | 模型怎么「决定」调工具？工具描述写不好会怎样？ | [code](../code/03-tool-use/) | ☐ |
-| 04 | [memory-rag](04-memory-rag/) | 该记什么、记在哪、什么时候取？检索为什么会失效？ | [code](../code/04-memory-rag/) | ☐ |
-| 05 | [planning](05-planning/) | 长任务怎么拆？什么时候该反思/重试？ | [code](../code/05-planning/) | ☐ |
+| 01 | [foundations](01-foundations/) | Agent 和「带 if/else 的 Workflow」差在哪？ReAct 每一步在干什么？ | [code](../code/01-foundations/) · [Teaching m01/m05](../projects/teaching-agent/) | ◐ |
+| 02 | [prompt-context](02-prompt-context/) | 同一模型，为什么上下文组织方式能决定成败？ | [code](../code/02-prompt-context/) · [Teaching m02](../projects/teaching-agent/) | ◐ |
+| 03 | [tool-use](03-tool-use/) | 模型怎么「决定」调工具？工具描述写不好会怎样？ | [code](../code/03-tool-use/) · [Teaching m04](../projects/teaching-agent/) | ◐ |
+| 04 | [memory-rag](04-memory-rag/) | 该记什么、记在哪、什么时候取？检索为什么会失效？ | [code](../code/04-memory-rag/) · [Teaching m06](../projects/teaching-agent/) | ◐ |
+| 05 | [planning](05-planning/) | 长任务怎么拆？什么时候该反思/重试？ | [code](../code/05-planning/) · [Teaching m05](../projects/teaching-agent/) | ◐ |
 | 06 | [multi-agent](06-multi-agent/) | 什么时候多智能体真的比单智能体好？ | [code](../code/06-multi-agent/) | ☐ |
 | 07 | [frameworks](07-frameworks/) | 框架替你做了什么，代价是什么？ | [code](../code/07-frameworks/) | ◐ |
-| 08 | [eval-observability](08-eval-observability/) | 怎么证明这一版比上一版强？ | [code](../code/08-eval-observability/) | ☐ |
-| 09 | [safety-guardrails](09-safety-guardrails/) | 提示注入、越权操作怎么防？ | [code](../code/09-safety-guardrails/) | ☐ |
-| 10 | [production](10-production/) | 怎么把延迟和成本压下来并稳定上线？ | [code](../code/10-production/) | ☐ |
+| 08 | [eval-observability](08-eval-observability/) | 怎么证明这一版比上一版强？ | [code](../code/08-eval-observability/) · [Teaching m08](../projects/teaching-agent/) | ◐ |
+| 09 | [safety-guardrails](09-safety-guardrails/) | 提示注入、越权操作怎么防？ | [code](../code/09-safety-guardrails/) · [Teaching m07](../projects/teaching-agent/) | ◐ |
+| 10 | [production](10-production/) | 怎么把延迟和成本压下来并稳定上线？ | [code](../code/10-production/) · [Teaching m09/m10](../projects/teaching-agent/) | ◐ |
 | — | [papers](papers/) | 论文原文索引与阅读笔记 | — | — |
 | — | [journal](journal/) | 学习日志：今天学了什么、卡在哪 | — | — |
 
 ## 怎么用这个目录
+
+> 📌 **Teaching 场景配套实现**：[projects/teaching-agent/](../projects/teaching-agent/README.md)
+> 把《Teaching Agent 技术知识体系与学习路线 v1.0》的 10 大模块实现为可离线运行的 Python 示例
+> （Spring AI → openai SDK + LangGraph + FastAPI，Milvus → 本地索引，RocketMQ → SQLite Outbox）。
+> 各主题 README 的「Teaching 场景落地」章节链接到对应模块，`run_all.py` 一键验收 10/10。
 
 - 每个主题目录的 `README.md` 是门面：目标、关键问题、资料清单、产出清单。先读它再动手。
 - 笔记命名 `YYYY-MM-DD-主题.md`（例：`2026-11-10-react-循环.md`），一篇只讲一件事。

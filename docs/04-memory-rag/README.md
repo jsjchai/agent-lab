@@ -14,3 +14,29 @@
 - [ ] 给 mini agent 加一个本地知识库工具（能跑通即可，不求规模）
 - [ ] 一个 bad case 分析：为什么这次没检索到答案
 - [ ] 一个记忆淘汰策略（按时间？按重要性？按访问频率？）
+
+## Teaching 场景落地（源文档 §8 RAG 与 Milvus）
+
+配套可运行示例：[projects/teaching-agent/m06](../../projects/teaching-agent/m06_rag.py)（本地 numpy 索引替代 Milvus）
+
+基本流程：
+```
+文档 → 解析清洗 → Chunk → Embedding → 索引
+问题 → ACL 过滤 → 混合检索(向量+BM25) → Rerank → 证据片段与引用
+     → LLM 回答 → 引用校验 / 无依据拒答
+```
+
+核心知识：文档解析、Chunk（语义/标题/段落/Token）、Metadata（doc_id/版本/租户/组织/权限/来源）、
+Embedding（模型/维度/版本）、Vector Search、BM25、Hybrid Search、Rerank、Citation、ACL、Index Version。
+
+工程规则（m06 落地）：
+1. 检索阶段执行租户 + 文档 ACL 过滤，不只靠 Prompt 保密。
+2. 不同 Embedding 模型/维度的向量不能混用。
+3. 模型切换建新索引版本，回填后再切 Alias。
+4. 保留 doc_id / 版本 / 段落来源。
+5. 引用必须回溯到实际检索片段。
+6. 无证据问题明确拒答。
+7. 不能只凭回答通顺判断检索质量。
+
+验收：回答有真实引用；无权限文档不可检索；文档更新后索引正确更新。
+m06 实测 Recall@3=1.0、引用准确率=1.0、拒答率=1.0。

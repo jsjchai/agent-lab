@@ -13,3 +13,22 @@
 - [ ] 危险操作的「人类确认」拦截层
 - [ ] 一份权限清单：每个工具能碰什么、不能碰什么
 - [ ] 笔记：哪些护栏是 prompt 级（弱），哪些是代码级（强）
+
+## Teaching 场景落地（源文档 §11 安全治理与人工确认）
+
+配套可运行示例：[projects/teaching-agent/m07](../../projects/teaching-agent/m07_security.py)（12 项安全测试套件）
+
+必须掌握：Authentication / Authorization / Multi-tenancy / Least Privilege / Prompt Injection / 敏感数据脱敏 / Tool Permission / Audit / HITL / Secret Management。
+
+Teaching 必须坚持（m04/m05/m07 落地）：
+1. Agent 负责理解、生成、查询、校验、草稿构建。
+2. Agent 不直接写业务表。
+3. 用户确认后由前端调用既有 API。
+4. 原业务服务继续负责权限、规则、事务、状态机。
+5. 安全上下文来自可信认证链路，不采信模型生成的身份字段。
+6. Tool 层执行二次鉴权。
+7. 确认凭证绑定 用户/租户/草稿哈希/有效期，一次性使用。
+
+安全测试（m07 逐条断言）：跨用户/跨租户访问、Prompt Injection（用户输入 + 检索文档）、伪造组织参数、过期凭证、重放、敏感日志检查。
+
+验收：越权拦截率 100%；确认凭证不可重放；关键工具调用可审计。m07 实测 12/12 通过。

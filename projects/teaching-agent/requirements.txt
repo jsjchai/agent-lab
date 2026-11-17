@@ -1,0 +1,14 @@
+# Teaching Agent 示例依赖（Python 替代 Spring AI 技术栈）
+# 安装：
+#   cd /Users/jsjchai/agent-lab
+#   export UV_CACHE_DIR="$PWD/.uv-cache"   # 沙箱环境用；普通终端可省
+#   uv pip install --python .venv/bin/python -r projects/teaching-agent/requirements.txt
+
+openai>=2.0                       # 模型接入（替代 Spring AI ChatClient）
+pydantic>=2.0                     # DTO + 校验（替代 Bean Validation）
+fastapi>=0.110                    # SSE / REST 接口（替代 Spring WebFlux MVC）
+uvicorn>=0.29                     # ASGI 服务器
+httpx>=0.27                       # FastAPI TestClient 依赖
+langgraph>=1.2,<2.0               # 图式工作流（替代 LangGraph4j）
+langgraph-checkpoint-sqlite>=3.0  # Checkpoint 持久化（替代 JVM 内存/Redis）
+numpy>=1.26                       # 本地向量检索（替代 Milvus 客户端）
