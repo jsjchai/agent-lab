@@ -1,7 +1,7 @@
 # 11 · Harness Engineering（ harness 工程）
 
 > **质量试点主题**：本主题是 Agent Lab V2.0 文档质量的锚点，按「质量优先于数量」原则先行建设，
-> 通过质量验收后再推广到其他主题。当前已完成 `01-introduction`，其余章节规划中。
+> 通过质量验收后再推广到其他主题。当前已完成 `01-introduction`、`04-execution-loop`、`06-tool-engineering`，其余章节规划中。
 
 ## 学习目标
 
@@ -28,9 +28,9 @@
 | 01 | [ introduction：为什么需要 Harness](01-introduction.md) | 裸调模型差在哪？Harness 补什么？ | ✅ 已完成 |
 | 02 | 核心概念：Harness/Agent/Framework/Loop | 术语边界与职责划分 | 🚧 规划中 |
 | 03 | 架构：插件化与能力 seam | 为什么一切皆插件 | 🚧 规划中 |
-| 04 | 执行循环：step/turn/上下文组装 | 一次请求如何变成行动 | 🚧 规划中 |
+| 04 | [执行循环：一次请求如何变成行动](04-execution-loop.md) | 取消/重试语义/事件持久化 | ✅ 已完成 |
 | 05 | Context Engineering | 模型看到什么、何时看到 | 🚧 规划中 |
-| 06 | Tool Engineering | 工具注册/把关/流水线 | 🚧 规划中 |
+| 06 | [工具工程：受控流水线](06-tool-engineering.md) | 瀑布/单调守卫/fail-closed | ✅ 已完成 |
 | 07 | 执行环境：Shell/文件系统/沙箱 | 行动如何被隔离 | 🚧 规划中 |
 | 08 | 错误恢复与 Checkpoint | 失败/中断如何续跑 | 🚧 规划中 |
 | 09 | 权限与安全边界 | 审批/最小权限/注入防护 | 🚧 规划中 |
