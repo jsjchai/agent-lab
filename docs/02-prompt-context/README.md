@@ -4,7 +4,8 @@
 
 ## 本章文档
 
-- [01 · 意图识别：Agent 的第一道门](01-intent-recognition.md) —— 意图/槽位/多意图/置信度、三种分类器取舍、归一化与三分支决策，配可运行 demo。
+- [01 · 意图识别：Agent 的第一道门](01-intent-recognition.md) —— 意图/槽位/多意图/置信度、三种分类器取舍、归一化、**调接口 vs 问答路由**，配可运行 demo。
+- [02 · 接口有 40 个参数怎么办](02-api-param-strategy.md) —— 参数六层分层（system/core/derived/default/conditional/form）、40→5 换算、草稿优先，配可运行 demo。
 
 ## 关键问题
 - 同一个任务，为什么换一种上下文组织方式效果差很多？
