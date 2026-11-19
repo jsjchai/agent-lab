@@ -14,9 +14,11 @@
 
 | 示例 | 文件 | 运行命令 |
 |---|---|---|
+| **意图识别独立 demo**（规则 vs LLM + 归一化 + 评测） | [intent_recognition.py](intent_recognition.py) | `cd code/02-prompt-context && ../../.venv/bin/python intent_recognition.py` |
 | 意图/槽位/澄清 + 21 条回归 | [m02](../../projects/teaching-agent/m02_intent_slots.py) | `cd projects/teaching-agent && ../../.venv/bin/python m02_intent_slots.py` |
 | 模型横向对比（prompt 效果） | [m11](../../projects/teaching-agent/m11_model_bench.py) | `../../.venv/bin/python m11_model_bench.py` |
 
 ## 对应笔记
 
-→ [docs/02-prompt-context](../../docs/02-prompt-context/README.md)
+→ [docs/02-prompt-context](../../docs/02-prompt-context/README.md) ·
+[意图识别教材](../../docs/02-prompt-context/01-intent-recognition.md)
