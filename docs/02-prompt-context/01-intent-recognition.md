@@ -527,7 +527,8 @@ Demo 提供了规则分类、LLM 分类和路由判定的离线评测。示例�
 
 -   [02-prompt-context](README.md)：Prompt 与上下文设计；
 -   [02-api-param-strategy](02-api-param-strategy.md)：接口参数策略；
--   [03-tool-use](../03-tool-use/README.md)：工具调用与接口契约。
+-   [03-tool-use](../03-tool-use/README.md)：工具调用与接口契约；
+-   [05-planning](../05-planning/README.md)：意图识别之后，如何规划多步骤任务。
 
 ## 11. 参考资料
 

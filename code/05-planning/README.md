@@ -14,10 +14,12 @@
 
 | 示例 | 文件 | 运行命令 |
 |---|---|---|
+| **规划 demo（医教）**：Plan-and-Execute / ReAct / 失败重规划 / 计划校验 | [planning_demo.py](planning_demo.py) | `cd code/05-planning && ../../.venv/bin/python planning_demo.py` |
 | LangGraph 工作流 + Checkpoint + HITL | [m05](../../projects/teaching-agent/m05_workflow.py) | `cd projects/teaching-agent && ../../.venv/bin/python m05_workflow.py` |
 | 评审回环对照（LangGraph） | [langgraph_case_agent](../07-frameworks/medical-education/langgraph_case_agent.py) | 见 [medical README](../07-frameworks/medical-education/README.md) |
 | 交互式可视化（澄清/确认） | [webui](../../projects/teaching-agent/webui/server.py) | `../../.venv/bin/python webui/server.py` |
 
 ## 对应笔记
 
-→ [docs/05-planning](../../docs/05-planning/README.md)
+→ [docs/05-planning](../../docs/05-planning/README.md) ·
+[规划范式](../../docs/05-planning/01-planning-with-models.md) · [校验与重规划](../../docs/05-planning/02-plan-validation-and-replan.md)
