@@ -33,10 +33,10 @@ DTO 字段，而是减少用户必须承担的填参工作。**
 
 假设"创建教学活动"接口包含 40 个参数，例如：
 
--   活动信息：标题、类型、主题、时长；
+-   活动信息：标题、活动类型、主题、时长；
 -   组织信息：院区、科室、创建人、带教老师；
 -   场地与形式：地点、示教室、线上平台、会议链接；
--   教学资源：讲义、签到码、录像归档；
+-   教学资源：课件、教案、签到码、活动资料；
 -   管理信息：审批流、继续教育学分、预算编码等。
 
 如果沿用最简单的"抽取槽位 → 缺什么就问什么"，会出现两个问题。
@@ -69,7 +69,7 @@ DTO 字段，而是减少用户必须承担的填参工作。**
   --------------- -------------------- ------------------ ---------------------------------------------------- ----------------
   `system`        服务端可信上下文                     否 ID、院区、创建人、创建时间、状态                                    5
 
-  `core`          Agent 抽取与澄清           是，仅缺失时 活动类型、科室、主题、日期、带教老师                                5
+  `core`          Agent 抽取与澄清           是，仅缺失时 活动类型、科室、主题、日期、带教老师                            5
 
   `derived`       业务代码计算                         否 标题、结束时间、时长、周次、轮转周期、科室 ID                       6
 
@@ -220,7 +220,7 @@ cd code/02-prompt-context
 ../../.venv/bin/python large_api_params.py
 ```
 
-原 Demo 提供了三组输入场景。以下为文档中的实测输出节选：
+Demo 提供了三组输入场景。以下为文档中的实测输出节选：
 
 ### 场景一：核心信息完整
 
@@ -243,6 +243,8 @@ cd code/02-prompt-context
 ```
 
 说明：核心槽位已齐全，组装器可以生成完整请求对象。这里的"可直接创建"表示参数层面已具备条件，真实系统仍需完成权限、业务规则及必要的确认流程。
+
+其中 `conditional_to_form: 2` 表示本例命中了两个条件字段：`material_url`（需要讲义）和 `video_archive_path`（需要录像归档）——因为默认配置里 `materials_required` 与 `record_enabled` 为 `True`。条件字段不由 Agent 追问，而是进入表单补充流程。
 
 ### 场景二：缺少两个核心字段
 
@@ -267,7 +269,7 @@ cd code/02-prompt-context
 
 ### 5.1 组装逻辑示意
 
-原 Demo 的核心设计可以概括为：
+Demo 的核心设计可以概括为：
 
 ``` python
 def assemble(slots, ctx, max_questions=3):
@@ -312,6 +314,18 @@ def assemble(slots, ctx, max_questions=3):
 3.  **限制单轮澄清数量**：Demo 使用
     `max_questions=3`，超过上限时转入草稿或表单流程。
 4.  **校验要按字段层级进行**：核心字段缺失与管理表单未完成是不同问题，不应混成一个"参数缺失"错误。
+
+### 5.3 概念与代码的对应关系
+
+| 文档概念 | 代码位置 | 说明 |
+|---|---|---|
+| 40 个参数清单 | `PARAMS` 列表 | 每项含 `name/category/askable/default/condition` |
+| 六层划分 | `Param.category` | `system/core/derived/default/conditional/form` |
+| 核心字段 | `CORE_PARAMS` | 只有这 5 个会被追问 |
+| 派生计算 | `derive_all()` | 标题、结束时间、时长、周次等 |
+| 条件触发 | `Param.condition` | 如「技能培训 → 模型实训室」 |
+| 组装与澄清上限 | `assemble(max_questions=3)` | 超过 3 个缺项转草稿 |
+| 调用前校验 | `validate()` | 只校验 core，其余不参与缺参报错 |
 
 ## 6. 设计取舍与边界
 
@@ -385,6 +399,16 @@ def assemble(slots, ctx, max_questions=3):
 
 需要注意：OpenAPI 的 `required`、`default`
 等信息本身不足以推断字段属于哪一层。参数责任、可信来源和业务条件仍需由开发人员显式定义。
+
+### 6.6 常见误区
+
+| 现象 | 原因 | 对策 |
+|---|---|---|
+| 让老师填「院区/审批流/学分」 | 把系统与管理字段当作用户字段 | 按来源分层，`system/form` 不进入提问 |
+| 模型能填 `tenant_id` 并生效 | 把模型输出当权威数据 | 服务端重新注入 system 字段 |
+| 默认场地未经校验就提交 | 把默认值等同于合法值 | 默认值只做初值，仍需业务校验 |
+| 草稿被当成正式活动发通知 | 草稿与正式状态未分离 | 状态机隔离，草稿不触发通知 |
+| 一次让模型抽 40 个字段 | 没有收敛可问字段 | 只把 `core` 放进模型 Schema |
 
 ## 7. 工程落地建议
 
@@ -473,7 +497,56 @@ required: true
 -   [03｜Tool
     Use](../03-tool-use/README.md)：如何把参数对象安全地交给工具或业务接口。
 
-## 9. 参考资料
+## 9. 附录：40 个参数完整清单
+
+下表与 `large_api_params.py` 中的 `PARAMS` 逐项对应，可用于核对「哪些问用户、哪些系统补」。
+
+| 层 | 字段 | 说明 |
+|---|---|---|
+| system | `id` | 活动 ID，创建时生成 |
+| system | `tenant_id` | 院区/租户，来自登录上下文 |
+| system | `creator_id` | 创建人，来自登录上下文 |
+| system | `created_at` | 创建时间，服务端生成 |
+| system | `status` | 活动状态，服务端控制 |
+| core | `session_type` | 教学查房/病例讨论/技能培训/理论授课 |
+| core | `department` | 科室 |
+| core | `topic` | 病例或教学主题 |
+| core | `date_text` | 日期表达，需解析为具体日期 |
+| core | `instructor` | 带教老师 |
+| derived | `title` | 科室+主题+类型 |
+| derived | `end_time` | 开始时间+时长 |
+| derived | `duration_minutes` | 默认 60 |
+| derived | `week_no` | 按日期计算 ISO 周 |
+| derived | `rotation_period` | 轮转周期 |
+| derived | `org_id` | 科室组织 ID |
+| default | `location` | 默认「示教室」 |
+| default | `mode` | 默认「线下」 |
+| default | `max_participants` | 默认 20 |
+| default | `notify_channel` | 默认「站内信」 |
+| default | `remind_minutes` | 默认提前 30 分钟 |
+| default | `allow_guest` | 默认不允许旁听 |
+| default | `record_enabled` | 默认录像 |
+| default | `materials_required` | 默认需要讲义 |
+| default | `sign_in_required` | 默认需要签到 |
+| default | `auto_approve` | 默认不自动审批 |
+| conditional | `mannequin_room` | 技能培训时需要模型实训室 |
+| conditional | `meeting_link` | 线上时需会议链接 |
+| conditional | `platform` | 线上时需平台 |
+| conditional | `material_url` | 需要讲义时需资料地址 |
+| conditional | `supervisor_required` | 实习生参加时需督导 |
+| conditional | `video_archive_path` | 录像时需归档路径 |
+| form | `budget_code` | 预算编码（教学处） |
+| form | `approval_flow` | 审批流（教学处） |
+| form | `custom_tags` | 自定义标签 |
+| form | `contact_phone` | 联系电话 |
+| form | `internal_note` | 内部备注 |
+| form | `cme_credits` | 继续教育学分 |
+| form | `archive_policy` | 归档策略 |
+| form | `external_ref` | 外部单号 |
+
+**合计：5 + 5 + 6 + 10 + 6 + 8 = 40。**
+
+## 10. 参考资料
 
 -   本章代码：[large_api_params.py](../../code/02-prompt-context/large_api_params.py)
 -   意图与路由：[01｜意图识别](01-intent-recognition.md)
