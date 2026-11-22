@@ -17,6 +17,9 @@
 
 from __future__ import annotations
 
+import math
+import time
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 
 # --------------------------------------------------------------------------- 路由注册表
@@ -177,6 +180,157 @@ def evaluate() -> dict:
 
 
 # --------------------------------------------------------------------------- 演示 / 自检
+
+# ===========================================================================
+# 四类路由方法对比：规则 / 向量比对 / 决策模型 / 大模型
+# ===========================================================================
+# 说明：下面的 model_strategy 是**真正训练**的朴素贝叶斯分类器（纯 Python，
+# 无第三方依赖），用来演示「决策模型」这条路：需要训练数据、输出概率、低延迟。
+# llm_strategy 是确定性替身，代表「把候选交给大模型判断」；真实实现替换成 LLM 调用。
+
+
+def _route_by_name(name: str) -> Route:
+    return next(r for r in ROUTES if r.name == name)
+
+
+# ---- 规则：只看强关键词
+def rule_strategy(text: str) -> str:
+    scored = []
+    for r in ROUTES:
+        if r.kind == "chat":
+            continue
+        kw = keyword_score(text, r)
+        if kw > 0:
+            scored.append((kw, r))
+    if not scored:
+        return "chat"
+    scored.sort(key=lambda x: (-x[0], x[1].cost))
+    return scored[0][1].name
+
+
+# ---- 向量比对：只看到示例的语义相似度
+def vector_strategy(text: str) -> str:
+    scored = []
+    for r in ROUTES:
+        if r.kind == "chat":
+            continue
+        sim = max((similarity(text, ex) for ex in r.examples), default=0.0)
+        scored.append((sim, r))
+    scored.sort(key=lambda x: (-x[0], x[1].cost))
+    best_sim, best_route = scored[0]
+    return best_route.name if best_sim > 0.05 else "chat"
+
+
+# ---- 决策模型：朴素贝叶斯（字符 bigram 多项式模型 + 拉普拉斯平滑）
+class NaiveBayesRouter:
+    def __init__(self):
+        self.prior: dict[str, float] = {}
+        self.lik: dict[str, dict[str, float]] = {}
+        self.vocab: set[str] = set()
+
+    def fit(self, samples: list[tuple[str, str]]) -> "NaiveBayesRouter":
+        counts: dict[str, Counter] = defaultdict(Counter)
+        label_count: Counter = Counter()
+        for text, label in samples:
+            label_count[label] += 1
+            for b in bigrams(text):
+                counts[label][b] += 1
+                self.vocab.add(b)
+        n = len(samples)
+        self.prior = {l: c / n for l, c in label_count.items()}
+        for label, c in counts.items():
+            total = sum(c.values()) + len(self.vocab)      # 拉普拉斯平滑
+            self.lik[label] = {b: (c[b] + 1) / total for b in self.vocab}
+        return self
+
+    def predict(self, text: str) -> tuple[str, float]:
+        scores = {}
+        for label in self.prior:
+            s = math.log(self.prior[label])
+            for b in bigrams(text):
+                s += math.log(self.lik[label].get(b, 1e-6))
+            scores[label] = s
+        # softmax 得到概率（数值稳定处理）
+        mx = max(scores.values())
+        exp = {l: math.exp(v - mx) for l, v in scores.items()}
+        z = sum(exp.values())
+        label = max(exp, key=exp.get)
+        return label, exp[label] / z
+
+
+def build_training_set() -> list[tuple[str, str]]:
+    """用示例 + 合成变体构造训练集（演示：决策模型需要标注数据）。"""
+    samples: list[tuple[str, str]] = []
+    for r in ROUTES:
+        for ex in r.examples:
+            samples.append((ex, r.name))
+        for kw in r.keywords:                    # 合成：关键词 + 常见前后缀
+            samples.append((f"帮我{kw}", r.name))
+            samples.append((f"{kw}一下", r.name))
+    return samples
+
+
+NB = NaiveBayesRouter().fit(build_training_set())
+
+
+def model_strategy(text: str) -> str:
+    label, prob = NB.predict(text)
+    return label if prob >= 0.35 else "chat"
+
+
+# ---- 大模型：把候选与信号交给模型判断（此处用确定性替身）
+def llm_strategy(text: str) -> str:
+    # 替身逻辑：规则 + 向量 + 决策模型三路投票，模拟「模型综合判断」
+    votes = Counter([rule_strategy(text), vector_strategy(text), model_strategy(text)])
+    top, cnt = votes.most_common(1)[0]
+    if cnt >= 2:
+        return top
+    # 平票时用融合分决胜
+    best = max(
+        ((0.6 * keyword_score(text, r) + 0.4 * semantic_score(text, r)), r) for r in ROUTES
+    )
+    return best[1].name
+
+
+STRATEGIES = {
+    "规则": rule_strategy,
+    "向量比对": vector_strategy,
+    "决策模型": model_strategy,
+    "大模型": llm_strategy,
+}
+
+
+def compare_strategies(repeat: int = 200) -> list[dict]:
+    """在同一标注集上对比四类方法：准确率 + 单次平均耗时。"""
+    rows = []
+    for name, fn in STRATEGIES.items():
+        correct = sum(1 for text, gold in EVAL if fn(text) == gold)
+        t0 = time.perf_counter()
+        for _ in range(repeat):
+            for text, _gold in EVAL:
+                fn(text)
+        elapsed = (time.perf_counter() - t0) / (repeat * len(EVAL)) * 1000
+        rows.append({
+            "name": name,
+            "accuracy": round(correct / len(EVAL), 3),
+            "latency_ms": round(elapsed, 3),
+            "needs_training": name == "决策模型",
+            "explainable": name in ("规则", "向量比对"),
+        })
+    return rows
+
+
+def demo_strategies() -> None:
+    print("\n  ── 5) 四类方法对比（规则 / 向量 / 决策模型 / 大模型）──")
+    print(f"    {'方法':<8}{'准确率':<8}{'单次耗时ms':<12}{'需训练':<7}{'可解释'}")
+    for row in compare_strategies():
+        print(f"    {row['name']:<10}{row['accuracy']:<10}{row['latency_ms']:<14}"
+              f"{'是' if row['needs_training'] else '否':<8}{'是' if row['explainable'] else '部分'}")
+    print("    说明：决策模型为现场训练的朴素贝叶斯（字符 bigram），仅用少量示例/合成样本；")
+    print("          数据量增大后通常优于纯规则，但需要标注与版本管理。")
+    print("          大模型替身为三路投票，真实实现换成 LLM 调用（成本与延迟显著更高）。")
+
+
 def demo() -> None:
     print("【intent_router】Agent 意图路由设计")
     print(f"  路由注册表：{len(ROUTES)} 个去处 -> {[r.name for r in ROUTES]}")
@@ -206,6 +360,8 @@ def demo() -> None:
     for text, gold, got, reason in ev["confusions"]:
         print(f"    ✗ 「{text}」期望 {gold} 实得 {got}：{reason}")
 
+    demo_strategies()
+
     print("\n  设计要点：")
     print("  · 路由是数据（注册表），不是 if/else；加去处 = 加一条 Route")
     print("  · 多信号融合（关键词+语义+LLM）比单信号稳；阈值+边距决定'敢不敢猜'")
@@ -230,6 +386,15 @@ def selftest() -> None:
     assert ds[0].route.name == "query_schedule" and ds[1].route.name == "create_session"
     # 评测达标
     assert evaluate()["accuracy"] >= 0.85
+    # 四类方法：都能返回合法路由；决策模型不劣于纯规则
+    valid = {r.name for r in ROUTES}
+    for name, fn in STRATEGIES.items():
+        for text, _gold in EVAL:
+            assert fn(text) in valid, f"{name} 返回非法路由: {fn(text)}"
+    assert {r["name"] for r in compare_strategies(repeat=5)} == {"规则", "向量比对", "决策模型", "大模型"}
+    model_acc = sum(1 for t, g in EVAL if model_strategy(t) == g) / len(EVAL)
+    rule_acc = sum(1 for t, g in EVAL if rule_strategy(t) == g) / len(EVAL)
+    assert model_acc >= rule_acc
 
 
 if __name__ == "__main__":
