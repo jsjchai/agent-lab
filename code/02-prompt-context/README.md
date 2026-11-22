@@ -18,10 +18,11 @@
 |---|---|---|
 | **意图识别独立 demo（医教）**（规则 vs LLM + 归一化 + 路由 + 评测） | [intent_recognition.py](intent_recognition.py) | `cd code/02-prompt-context && ../../.venv/bin/python intent_recognition.py` |
 | **40 参接口分层 demo（医教排课）**（system/core/derived/default/conditional/form） | [large_api_params.py](large_api_params.py) | `../../.venv/bin/python large_api_params.py` |
+| **意图路由设计 demo**（路由表/打分/阈值边距/兜底/多意图） | [intent_router.py](intent_router.py) | `../../.venv/bin/python intent_router.py` |
 | 意图/槽位/澄清 + 21 条回归（学校教研） | [m02](../../projects/teaching-agent/m02_intent_slots.py) | `cd projects/teaching-agent && ../../.venv/bin/python m02_intent_slots.py` |
 | 模型横向对比（prompt 效果） | [m11](../../projects/teaching-agent/m11_model_bench.py) | `../../.venv/bin/python m11_model_bench.py` |
 
 ## 对应笔记
 
 → [docs/02-prompt-context](../../docs/02-prompt-context/README.md) ·
-[意图识别教材](../../docs/02-prompt-context/01-intent-recognition.md) · [40参策略](../../docs/02-prompt-context/02-api-param-strategy.md)
+[意图识别教材](../../docs/02-prompt-context/01-intent-recognition.md) · [40参策略](../../docs/02-prompt-context/02-api-param-strategy.md) · [意图路由](../../docs/02-prompt-context/03-agent-intent-routing.md)
