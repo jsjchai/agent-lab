@@ -16,10 +16,10 @@
 | 目录 | 内容 |
 |---|---|
 | `01-foundations/` | 无框架手写 ReAct 循环、停止条件实验 |
-| `02-prompt-context/` | 结构化输出、上下文组织对比 |
+| `02-prompt-context/` | 6 个 demo：意图识别、40 参分层、意图路由、置信度校准、小模型优化、JEV 模拟 |
 | `03-tool-use/` | function calling 循环、工具描述对比、MCP 试验 |
 | `04-memory-rag/` | 切块/检索/记忆读写的最小实现 |
-| `05-planning/` | 任务分解、反思、重试 |
+| `05-planning/` | 规划范式 / 校验与重规划（1 个 demo） |
 | `06-multi-agent/` | 角色编排与通信 |
 | `07-frameworks/` | 框架对照实现 |
 | ├─ `medical-education/` | LangGraph vs CrewAI + 可视化界面 + 小模型适配 |
@@ -30,6 +30,33 @@
 | `_shared/` | 公共工具 |
 
 ## 已完成示例
+
+### 02-prompt-context（6 个）
+
+```bash
+cd code/02-prompt-context
+../../.venv/bin/python intent_recognition.py      # 意图识别（规则 vs LLM + 归一化 + 路由）
+../../.venv/bin/python large_api_params.py        # 40 参接口分层
+../../.venv/bin/python intent_router.py           # 路由设计（打分/阈值/兜底）
+../../.venv/bin/python confidence_calibration.py  # 置信度校准（ECE/温度缩放）
+../../.venv/bin/python small_model_optimization.py# 小模型优化阶梯
+../../.venv/bin/python jev_decision_demo.py       # JEV 决策接口模拟（不联网）
+```
+
+### 05-planning（1 个）
+
+```bash
+cd code/05-planning && ../../.venv/bin/python planning_demo.py
+```
+
+### 11-harness-experiments（7 个）
+
+```bash
+cd code/11-harness-experiments
+for f in minimal_harness execution_loop tool_pipeline context_window sandbox_env checkpoint_recovery injection_defense; do
+  ../../.venv/bin/python "$f.py"
+done
+```
 
 ### 07-frameworks/medical-education
 

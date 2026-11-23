@@ -20,6 +20,18 @@
 
 > 知识点笔记见各主题 README 的「Teaching 场景落地」章节；方法论沉淀见 [journal/](journal/)。
 
+### V2.0 知识文档进度
+
+| 主题 | 状态 | 说明 |
+|---|---|---|
+| [02 提示与上下文工程](02-prompt-context/README.md) | ☑ 5 章 | 意图识别 / 40 参 / 路由设计 / 小模型优化 / JEV，6 个 demo |
+| [05 规划与推理](05-planning/README.md) | ☑ 2 章 | 规划范式 / 校验与重规划，1 个 demo |
+| [11 Harness Engineering](11-harness-engineering/README.md) | ☑ 11 章 | 质量试点标杆，7 个实验 |
+| 01/03/04/06/07/08/09/10 | ◐/☐ | 仅提纲，规划见各 README |
+| 12–15 | ☐ | 质量门禁串行推进（架构方案阶段 B） |
+
+全量清单：[docs/INDEX.md](INDEX.md)。
+
 ## 阶段一 · 打地基（约 1~2 周）
 
 | # | 内容 | 目录 | 验收标准 |

@@ -12,7 +12,7 @@ Agent 学习与实践仓库：**资料在 `docs/`，小步实验代码在 `code/
 |---|---|---|
 | **Teaching Agent 知识体系** | [projects/teaching-agent/](projects/teaching-agent/README.md) | 源文档 10 大模块的 Python 落地（m01–m11）+ 可交互可视化 + 评测门禁 + 模型对比，`run_all.py` 一键验收 11/11 |
 | **框架对照实现** | [code/07-frameworks/](code/07-frameworks/README.md) | 医疗教学 LangGraph vs CrewAI（含可视化/小模型适配）+ DeepSeek Harness 插件三式 |
-| **主题笔记** | [docs/](docs/README.md) | 01–10 知识点 + 路线图 + 论文索引 + 学习日志 |
+| **主题笔记** | [docs/](docs/README.md) | 01–11 知识点（02/05/11 已成章，共 18 篇）+ 路线图 + 论文索引 + 学习日志；全量清单见 [docs/INDEX.md](docs/INDEX.md) |
 
 **怎么开始**：想系统学 → 读 [docs/00-roadmap.md](docs/00-roadmap.md)；想直接跑 → 下面「快速开始」；
 想按主题找代码 → 进 `code/0X/README.md` 导航页。
@@ -70,6 +70,7 @@ agent-lab/
 | 08 | [eval-observability](docs/08-eval-observability/) | 评测集、LLM-as-judge、tracing |
 | 09 | [safety-guardrails](docs/09-safety-guardrails/) | 注入攻击、权限、人类确认、合规 |
 | 10 | [production](docs/10-production/) | 成本、延迟、并发、部署、监控 |
+| 11 | [harness-engineering](docs/11-harness-engineering/)（11 章 ☑） | Harness 架构、循环、上下文、工具、环境、恢复、安全、评测 |
 
 ## 学习路线（摘要）
 
