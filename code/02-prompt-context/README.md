@@ -21,6 +21,7 @@
 | **意图路由设计 demo**（路由表/打分/阈值边距/兜底/多意图） | [intent_router.py](intent_router.py) | `../../.venv/bin/python intent_router.py` |
 | **置信度校准 demo**（ECE/温度缩放/接受域对比） | [confidence_calibration.py](confidence_calibration.py) | `../../.venv/bin/python confidence_calibration.py` |
 | **小模型优化阶梯 demo**（解析容错/归一化/重试/分解/规则兜底） | [small_model_optimization.py](small_model_optimization.py) | `../../.venv/bin/python small_model_optimization.py` |
+| **JEV 决策接口模拟 demo**（Choice/Noul/Score + 校验，非真实 API） | [jev_decision_demo.py](jev_decision_demo.py) | `../../.venv/bin/python jev_decision_demo.py` |
 | 意图/槽位/澄清 + 21 条回归（学校教研） | [m02](../../projects/teaching-agent/m02_intent_slots.py) | `cd projects/teaching-agent && ../../.venv/bin/python m02_intent_slots.py` |
 | 模型横向对比（prompt 效果） | [m11](../../projects/teaching-agent/m11_model_bench.py) | `../../.venv/bin/python m11_model_bench.py` |
 

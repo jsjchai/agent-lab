@@ -220,6 +220,7 @@ return Decision(..., action="dispatch", requires_approval=best_route.requires_ap
 （「安排查房」与「查一下安排」向量很近），且相似度分数**不可直接当概率**。
 
 **③ 决策模型（trained classifier）**：用标注数据训练分类器（逻辑回归、GBDT、小 Transformer、朴素贝叶斯等），
+也可以直接调用专门的决策模型服务（如 TypeSafe Jev，见 [05 · JEV](05-jev-system-one-decision-models.md)），
 输出各类概率。本质是「从数据里学分界」。优点是**低延迟、输出概率、可用特征解释**、对已知意图区分度高；
 缺点是**依赖标注量与质量、需要训练/版本/监控**，冷启动阶段样本少时未必强于规则，意图变更要重训。
 
